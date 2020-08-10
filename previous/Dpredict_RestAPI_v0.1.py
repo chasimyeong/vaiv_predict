@@ -20,7 +20,7 @@ from PIL import Image
 
 warnings.filterwarnings('ignore')
 
-ROOT_DIR = os.path.abspath('./')
+ROOT_DIR = os.path.abspath('../')
 models_path = os.path.join(ROOT_DIR, 'models')
 weights_path = os.path.join(models_path, 'weights')
 
