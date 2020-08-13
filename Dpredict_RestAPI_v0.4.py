@@ -11,6 +11,7 @@ else:
     os.chdir(os.path.dirname(__file__))
 
 from flask import Flask, request, jsonify
+from flask_cors import CORS
 
 from dtnn import dtnn
 from dtnn import utils
@@ -19,7 +20,7 @@ from dtnn import spatial_analysis as sa
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
-
+CORS(app)
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
