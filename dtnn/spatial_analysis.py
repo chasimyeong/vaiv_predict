@@ -7,10 +7,10 @@ import requests
 
 class LinearLineOfSight(object):
 
-    def __init__(self, fileName, coord, inputCoverage, observerPoint, observerOffset, targetPoint):
+    def __init__(self, fileName, coord, boundingBox, observerPoint, observerOffset, targetPoint):
         self.fileName = fileName
         self.coord = coord
-        self.inputCoverage = inputCoverage
+        self.boundingBox = boundingBox
         self.observerPoint = observerPoint
         self.observerOffset = observerOffset
         self.targetPoint = targetPoint
@@ -19,9 +19,9 @@ class LinearLineOfSight(object):
 
         url = 'http://localhost:8080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        georesponse = requests.post(url, data = self.xml_create(), headers=headers).text
-
-        return georesponse
+        geo_response = requests.post(url, data = self.xml_create(), headers=headers).text
+        geo_response = "Currently in testing phase"
+        return geo_response
 
     def xml_create(self):
 
@@ -47,8 +47,8 @@ class LinearLineOfSight(object):
               '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
               '<wcs:DomainSubset>'\
               '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + self.coord + '">'\
-              '<ows:LowerCorner>' + str(self.inputCoverage[0]) + ' ' + str(self.inputCoverage[1]) + '</ows:LowerCorner>' \
-              '<ows:UpperCorner>' + str(self.inputCoverage[2]) + ' ' + str(self.inputCoverage[3]) + '</ows:UpperCorner>' \
+              '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
+              '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
               '</ows:BoundingBox>' \
               '</wcs:DomainSubset>' \
               '<wcs:Output format="image/tiff"/>' \
@@ -90,21 +90,21 @@ class LinearLineOfSight(object):
 
 class CalculateCutFill(object):
 
-    def __init__(self, fileName, coord, inputCoverage, observerPoint, observerOffset, targetPoint):
+    def __init__(self, fileName, coord, boundingBox, inputGeometry, userMeanHeight):
         self.fileName = fileName
         self.coord = coord
-        self.inputCoverage = inputCoverage
-        self.observerPoint = observerPoint
-        self.observerOffset = observerOffset
-        self.targetPoint = targetPoint
+        self.boundingBox = boundingBox
+        self.inputGeometry = inputGeometry
+        self.userMeanHeight = userMeanHeight
 
     def analysis(self):
 
         url = 'http://localhost:8080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        georesponse = requests.post(url, data = self.xml_create(), headers=headers).text
+        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
 
-        return georesponse
+        geo_response = "Currently in testing phase"
+        return geo_response
 
     def xml_create(self):
 
@@ -119,10 +119,10 @@ class CalculateCutFill(object):
               'xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" ' \
               'xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ' \
               'http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">' \
-              '<ows:Identifier>statistics:LinearLineOfSight</ows:Identifier>' \
+              '<ows:Identifier>kopss:KM_CalculateCutFill</ows:Identifier>' \
               '<wps:DataInputs>' \
               '<wps:Input>' \
-              '<ows:Identifier>inputCoverage</ows:Identifier>' \
+              '<ows:Identifier>inputDem</ows:Identifier>' \
               '<wps:Reference mimeType="image/tiff" ' \
               'xlink:href="http://geoserver/wcs" method="POST">' \
               '<wps:Body>' \
@@ -130,8 +130,8 @@ class CalculateCutFill(object):
               '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
               '<wcs:DomainSubset>'\
               '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + self.coord + '">'\
-              '<ows:LowerCorner>' + str(self.inputCoverage[0]) + ' ' + str(self.inputCoverage[1]) + '</ows:LowerCorner>' \
-              '<ows:UpperCorner>' + str(self.inputCoverage[2]) + ' ' + str(self.inputCoverage[3]) + '</ows:UpperCorner>' \
+              '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
+              '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
               '</ows:BoundingBox>' \
               '</wcs:DomainSubset>' \
               '<wcs:Output format="image/tiff"/>' \
@@ -140,30 +140,22 @@ class CalculateCutFill(object):
               '</wps:Reference>' \
               '</wps:Input>' \
               '<wps:Input>' \
-              '<ows:Identifier>observerPoint</ows:Identifier>' \
+              '<ows:Identifier>inputGeometry</ows:Identifier>' \
               '<wps:Data>' \
               '<wps:ComplexData mimeType="application/wkt">' \
-              '<![CDATA[POINT(' + str(self.observerPoint[0]) + ' ' + str(self.observerPoint[1]) + ')]]>' \
+              '<![CDATA[MULTIPOLYGON(((' + str(self.inputGeometry) + ')))]]>' \
               '</wps:ComplexData>' \
               '</wps:Data>' \
               '</wps:Input>' \
               '<wps:Input>' \
-              '<ows:Identifier>observerOffset</ows:Identifier>' \
+              '<ows:Identifier>userMeanHeight</ows:Identifier>' \
               '<wps:Data>' \
-              '<wps:LiteralData>' + str(self.observerOffset) + '</wps:LiteralData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>targetPoint</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:ComplexData mimeType="application/wkt">' \
-              '<![CDATA[POINT(' + str(self.targetPoint[0]) + ' ' + str(self.targetPoint[1]) + ')]]>' \
-              '</wps:ComplexData>' \
+              '<wps:LiteralData>' + str(self.userMeanHeight) + '</wps:LiteralData>' \
               '</wps:Data>' \
               '</wps:Input>' \
               '</wps:DataInputs>' \
               '<wps:ResponseForm>' \
-              '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">'\
+              '<wps:RawDataOutput mimeType="text/xml">'\
               '<ows:Identifier>result</ows:Identifier>' \
               '</wps:RawDataOutput>' \
               '</wps:ResponseForm>' \

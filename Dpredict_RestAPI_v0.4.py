@@ -8,7 +8,7 @@ import sys
 if getattr(sys, 'frozen', False):
     os.chdir(os.path.dirname(sys.executable))
 else:
-    os.chdir(os.path.dirname(__file__))
+    os.chdir(os.path.dirname(os.path.abspath(__file__)))
 
 from flask import Flask, request, jsonify
 from flask_cors import CORS
@@ -21,6 +21,7 @@ warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app)
+
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
@@ -72,16 +73,17 @@ def spatial_analysis():
         param = data['parameter']
 
         if command == "linear_line_of_sight":
-            LLOS = sa.LinearLineOfSight(param['fileName'], param['coord'], param['inputCoverage'],
-                                            param['observerPoint'], param['observerOffset'], param['targetPoint'])
+            LLOS = sa.LinearLineOfSight(param['fileName'], param['coord'], param['boundingBox'],
+                                        param['observerPoint'], param['observerOffset'], param['targetPoint'])
             response = LLOS.analysis()
         elif command == "calculate_cut_fill":
-            CCF = sa.CalculateCutFill
+            CCF = sa.CalculateCutFill(param['fileName'], param['coord'], param['boundingBox'],
+                                      param['inputGeometry'], param['userMeanHeight'])
             response = CCF.analysis()
 
         else:
             response = "The 'command' parameters that we support are 'linear_line_of_sight', " \
-                      "'calculate_cut_fill'"
+                       "'calculate_cut_fill'"
         return jsonify({'command': command, 'result': response})
 
 
