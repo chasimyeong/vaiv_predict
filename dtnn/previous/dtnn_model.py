@@ -19,14 +19,14 @@ class DTNNmodels:
     
     def __init__(self):
         #초기 모델 및 가중치 경로 설정
-        self.ROOT_DIR = os.path.abspath('./')
+        self.ROOT_DIR = os.path.abspath('../')
         self.models_path = os.path.join(self.ROOT_DIR, 'models')
         self.weights_path = os.path.join(self.models_path, 'weights')
 
         self.unet_model_file = os.path.join(self.models_path, 'unet1_model.json')
         
-        self.unet_weight_skyline_file = os.path.join(self.weights_path, 'skyline_detection_1channel.hdf5')
-        self.unet_weight_shielding_file = os.path.join(self.weights_path, 'view_shielding_rate_1channel.hdf5')
+        self.unet_weight_skyline_file = os.path.join(self.weights_path, 'skyline_detection_1.hdf5')
+        self.unet_weight_shielding_file = os.path.join(self.weights_path, 'view_shielding_rate_1.hdf5')
         
     def load_models(self):
         #model load

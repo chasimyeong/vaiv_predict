@@ -9,7 +9,7 @@ from io import BytesIO
 from flask import Flask, request, jsonify
 from PIL import Image
 
-from dtnn.dtnn_model import DTNNmodels
+from dtnn.previous.dtnn_model import DTNNmodels
 
 warnings.filterwarnings('ignore')
 
