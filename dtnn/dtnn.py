@@ -13,6 +13,9 @@ from keras.optimizers import Adam
 import keras.backend as K
 
 from PIL import Image
+
+from dtnn.color import ColorPalette
+
 warnings.filterwarnings('ignore')
 
 # Setting initial models and weights path
@@ -58,10 +61,11 @@ def unet_model(model_file, weight_file):
 
 class SkylineDetection(object):
 
-    def __init__(self, file_img, model):
+    def __init__(self, file_img, model, color='R'):
         self.file_img = file_img
         self.img = Image.open(self.file_img)
         self.model = model
+        self.color = color
 
     def predict(self, threshold=20):
         # pre-processing image
@@ -108,17 +112,19 @@ class SkylineDetection(object):
                     ridge.append([c, r])
                     break
 
-        ridge.append([cols + 1, rows + 1])
-        ridge.append([0, rows + 1])
+        # ridge.append([cols + 1, rows + 1])
+        # ridge.append([0, rows + 1])
         ridge_array = np.array(ridge)
 
         return ridge_array
 
     def draw_skyline(self, img, ridge):
 
+        cp = ColorPalette(self.color)
+
         ridge = ridge.astype(np.int32)
 
-        polyline_img = cv2.polylines(img, [ridge], False, (255, 0, 0))
+        polyline_img = cv2.polylines(img, [ridge], False, cp.color_mapping(), 5)
 
         return polyline_img
 
