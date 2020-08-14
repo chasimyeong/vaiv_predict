@@ -33,6 +33,7 @@ class OutputFormat(object):
         output_img = base64_img.decode('utf-8')
         return output_img
 
+
 class ColorPalette(object):
 
     def __init__(self, color):
@@ -46,6 +47,8 @@ class ColorPalette(object):
         elif self.color == 'G':
             return self.green()
         elif self.color == 'B':
+            return self.blue()
+        elif self.color == 'BL':
             return self.black()
         elif self.color == 'W':
             return self.white()
@@ -61,6 +64,10 @@ class ColorPalette(object):
     @staticmethod
     def green():
         return 51, 255, 51
+
+    @staticmethod
+    def blue():
+        return 51, 51, 255
 
     @staticmethod
     def black():

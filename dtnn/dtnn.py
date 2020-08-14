@@ -15,6 +15,7 @@ import keras.backend as K
 from PIL import Image
 
 from dtnn.utils import ColorPalette
+from dtnn import image_processing
 
 warnings.filterwarnings('ignore')
 
@@ -61,7 +62,7 @@ def unet_model(model_file, weight_file):
 
 class SkylineDetection(object):
 
-    def __init__(self, file_img, model, color='R'):
+    def __init__(self, file_img, model, color='B'):
         self.file_img = file_img
         self.img = Image.open(self.file_img)
         self.model = model
@@ -69,7 +70,7 @@ class SkylineDetection(object):
 
     def predict(self, threshold=20):
         # pre-processing image
-        input_arr = self.preprocessing_img(self.img)
+        input_arr = image_processing.preprocessing_img(self.img)
 
         # prediction output
         predictions = self.model.predict(input_arr)
@@ -77,56 +78,14 @@ class SkylineDetection(object):
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
 
         # after-processing image
-        clear_pred = self.clear_img(resize_prediction, threshold)
-        ridge = self.y_ridge(clear_pred)
+        clear_pred = image_processing.clear_img(resize_prediction, threshold)
+        ridge = image_processing.y_ridge(clear_pred)
 
         # final output
         resize_img = np.array(self.img, np.uint8)
-        output_img = self.draw_skyline(resize_img, ridge)
+        output_img = image_processing.draw_polyline(resize_img, ridge)
 
         return output_img
-
-    def preprocessing_img(self, img):
-        one_ch_img = img.convert('L')
-        input_arr = np.array(one_ch_img.resize((256, 256))) / 255
-        input_arr = input_arr.reshape((1,) + input_arr.shape)
-
-        return input_arr
-
-    def clear_img(self, img_arr, threshold):
-        clear = np.where(img_arr < threshold, 0, img_arr)
-        clear = np.where(clear > 0, 255, clear)
-
-        return clear
-
-    def y_ridge(self, img_arr):
-        cols = img_arr.shape[1]
-        rows = img_arr.shape[0]
-
-        ridge = []
-
-        for c in range(cols):
-            for r in range(rows):
-                row = img_arr[r][c]
-                if row > 0:
-                    ridge.append([c, r])
-                    break
-
-        # ridge.append([cols + 1, rows + 1])
-        # ridge.append([0, rows + 1])
-        ridge_array = np.array(ridge)
-
-        return ridge_array
-
-    def draw_skyline(self, img, ridge):
-
-        cp = ColorPalette(self.color)
-
-        ridge = ridge.astype(np.int32)
-
-        polyline_img = cv2.polylines(img, [ridge], False, cp.color_mapping(), 5)
-
-        return polyline_img
 
 
 class ViewShieldingRate(object):
@@ -138,7 +97,7 @@ class ViewShieldingRate(object):
 
     def predict(self, threshold=20):
         # pre-processing image
-        input_arr = self.preprocessing_img(self.img)
+        input_arr = image_processing.preprocessing_img(self.img)
 
         # prediction output
         predictions = self.model.predict(input_arr)
@@ -146,55 +105,15 @@ class ViewShieldingRate(object):
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
 
         # after-processing image
-        clear_pred = self.clear_img(resize_prediction, threshold)
-        ridge = self.y_ridge(clear_pred)
+        clear_pred = image_processing.clear_img(resize_prediction, threshold)
+        ridge = image_processing.y_ridge(clear_pred)
 
         # final output
         resize_img = np.array(self.img, np.uint8)
-        output_img = self.draw_skyline(resize_img, ridge)
+        output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
 
         return output_img, rate
-
-    def preprocessing_img(self, img):
-        one_ch_img = img.convert('L')
-        input_arr = np.array(one_ch_img.resize((256, 256))) / 255
-        input_arr = input_arr.reshape((1,) + input_arr.shape)
-
-        return input_arr
-
-    def clear_img(self, img_arr, threshold):
-        clear = np.where(img_arr < threshold, 0, img_arr)
-        clear = np.where(clear > 0, 255, clear)
-
-        return clear
-
-    def y_ridge(self, img_arr):
-        cols = img_arr.shape[1]
-        rows = img_arr.shape[0]
-
-        ridge = []
-
-        for c in range(cols):
-            for r in range(rows):
-                row = img_arr[r][c]
-                if row > 0:
-                    ridge.append([c, r])
-                    break
-
-        ridge.append([cols + 1, rows + 1])
-        ridge.append([0, rows + 1])
-        ridge_array = np.array(ridge)
-
-        return ridge_array
-
-    def draw_skyline(self, img, ridge):
-
-        ridge = ridge.astype(np.int32)
-
-        polyline_img = cv2.polylines(img, [ridge], False, (255, 0, 0))
-
-        return polyline_img
 
     def shielding_rate(self, img, contour):
         x = img.shape[1]

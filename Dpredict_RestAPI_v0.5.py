@@ -19,13 +19,13 @@ from dtnn import spatial_analysis as sa
 
 warnings.filterwarnings('ignore')
 
-
 app = Flask(__name__)
 CORS(app)
 
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
+
     if request.method == 'POST':
         # input image
         img = request.files['image']
