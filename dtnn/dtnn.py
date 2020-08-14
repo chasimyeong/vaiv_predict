@@ -14,7 +14,7 @@ import keras.backend as K
 
 from PIL import Image
 
-from dtnn.color import ColorPalette
+from dtnn.utils import ColorPalette
 
 warnings.filterwarnings('ignore')
 
