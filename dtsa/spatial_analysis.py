@@ -1,8 +1,30 @@
 
+from flask import jsonify
 
 import requests
 
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
+
+
+def check_command(data):
+
+    command = data['command']
+    param = data['parameter']
+
+    if command == "linear_line_of_sight":
+        LLOS = LinearLineOfSight(param['fileName'], param['coord'], param['boundingBox'],
+                                    param['observerPoint'], param['observerOffset'], param['targetPoint'])
+        result = LLOS.analysis()
+    elif command == "calculate_cut_fill":
+        CCF = CalculateCutFill(param['fileName'], param['coord'], param['boundingBox'],
+                                  param['inputGeometry'], param['userMeanHeight'])
+        result = CCF.analysis()
+
+    else:
+        result = "The 'command' parameters that we support are 'linear_line_of_sight', " \
+                   "'calculate_cut_fill'"
+
+    return jsonify({'command': command, 'result': result})
 
 
 class LinearLineOfSight(object):
