@@ -15,7 +15,7 @@ from flask_cors import CORS
 
 from dtnn import dtnn
 from dtnn import utils
-from dtnn import spatial_analysis as sa
+from dtsa import spatial_analysis as sa
 
 warnings.filterwarnings('ignore')
 
