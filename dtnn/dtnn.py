@@ -14,8 +14,10 @@ import keras.backend as K
 
 from PIL import Image
 
-from dtnn.utils import ColorPalette
+from flask import jsonify
+
 from dtnn import image_processing
+from dtnn import utils
 
 warnings.filterwarnings('ignore')
 
@@ -41,7 +43,9 @@ def load_models():
     sky_unet = unet_model(unet1_model_file, unet_weight_skyline_file)
     shield_unet = unet_model(unet1_model_file, unet_weight_shielding_file)
 
-    return sky_unet, shield_unet
+    models = [sky_unet, shield_unet]
+
+    return models
 
 
 def unet_model(model_file, weight_file):
@@ -58,6 +62,37 @@ def unet_model(model_file, weight_file):
 
     unet.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['mse', 'mae'])
     return unet
+
+
+def check_command(img, data, models):
+
+    command = data['command']
+    img_format = data['format']
+
+    result = {}
+
+    if command == 'skyline_detection':
+
+        skyline = SkylineDetection(img, models[0])
+        output_img = skyline.predict(threshold=20)
+
+    elif command == 'view_shielding_rate':
+
+        shielding = ViewShieldingRate(img, models[1])
+        output_img, shielding_rate = shielding.predict(threshold=20)
+        result['shielding_rate'] = shielding_rate
+
+    else:
+        command = "The 'command' parameters that we support are 'skyline_detection', " \
+                  "'view_shielding_rate'"
+
+        return jsonify({'Error': command})
+
+    output_format = utils.OutputFormat(output_img, img_format)
+    final_img = output_format.trans_format()
+    result['output_img'] = final_img
+
+    return jsonify({'command': command, 'result': result})
 
 
 class SkylineDetection(object):
