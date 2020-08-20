@@ -12,7 +12,12 @@ def preprocessing_img(img):
     return input_arr
 
 
-def clear_img(img_arr, threshold):
+# def clear_img(img_arr, blocksize=31):
+#     clear = cv2.adaptiveThreshold(img_arr, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, blocksize, 0)
+#
+#     return clear
+
+def clear_img(img_arr, threshold=20):
     clear = np.where(img_arr < threshold, 0, img_arr)
     clear = np.where(clear > 0, 255, clear)
 

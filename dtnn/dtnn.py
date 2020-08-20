@@ -99,7 +99,7 @@ class SkylineDetection(object):
         self.model = model
         self.color = color
 
-    def predict(self, threshold=20):
+    def predict(self):
         # pre-processing image
         input_arr = image_processing.preprocessing_img(self.img)
 
@@ -109,7 +109,7 @@ class SkylineDetection(object):
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
 
         # after-processing image
-        clear_pred = image_processing.clear_img(resize_prediction, threshold)
+        clear_pred = image_processing.clear_img(resize_prediction)
         ridge = image_processing.y_ridge(clear_pred)
 
         # final output
