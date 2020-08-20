@@ -2,7 +2,6 @@
 # coding: utf-8
 # v0.2
 
-import warnings
 import os
 import numpy as np
 
@@ -19,34 +18,31 @@ from flask import jsonify
 from dtnn import image_processing
 from dtnn import utils
 
-warnings.filterwarnings('ignore')
-
-# Setting initial models and weights path
-# fold path
-ROOT_DIR = os.path.abspath('')
-models_path = os.path.join(ROOT_DIR, 'models')
-weights_path = os.path.join(models_path, 'weights')
-
-# models
-# The number after the model name refers to the channel
-unet1_model_file = os.path.join(models_path, 'unet1_model.json')
-unet3_model_file = os.path.join(models_path, 'unet3_model.json')
-
-# weights
-unet_weight_skyline_file = os.path.join(weights_path, 'skyline_detection_1.hdf5')
-unet_weight_shielding_file = os.path.join(weights_path, 'view_shielding_rate_1.hdf5')
-
 
 def load_models():
+    global models
+
+    # Setting initial models and weights path
+    # fold path
+    ROOT_DIR = os.path.abspath('')
+    models_path = os.path.join(ROOT_DIR, 'models')
+    weights_path = os.path.join(models_path, 'weights')
+
+    # models
+    # The number after the model name refers to the channel
+    unet1_model_file = os.path.join(models_path, 'unet1_model.json')
+    unet3_model_file = os.path.join(models_path, 'unet3_model.json')
+
+    # weights
+    unet_weight_skyline_file = os.path.join(weights_path, 'skyline_detection_1.hdf5')
+    unet_weight_shielding_file = os.path.join(weights_path, 'view_shielding_rate_1.hdf5')
+
     # models load
     K.clear_session()
     sky_unet = unet_model(unet1_model_file, unet_weight_skyline_file)
     shield_unet = unet_model(unet1_model_file, unet_weight_shielding_file)
 
     models = [sky_unet, shield_unet]
-
-    return models
-
 
 def unet_model(model_file, weight_file):
     # unet model
@@ -64,7 +60,7 @@ def unet_model(model_file, weight_file):
     return unet
 
 
-def check_command(img, data, models):
+def check_command(img, data):
 
     command = data['command']
     img_format = data['format']
@@ -74,12 +70,12 @@ def check_command(img, data, models):
     if command == 'skyline_detection':
 
         skyline = SkylineDetection(img, models[0])
-        output_img = skyline.predict(threshold=20)
+        output_img = skyline.predict()
 
     elif command == 'view_shielding_rate':
 
         shielding = ViewShieldingRate(img, models[1])
-        output_img, shielding_rate = shielding.predict(threshold=20)
+        output_img, shielding_rate = shielding.predict()
         result['shielding_rate'] = shielding_rate
 
     else:

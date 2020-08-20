@@ -32,7 +32,7 @@ def predict():
         # parameter
         data = request.form
 
-        response = dtnn.check_command(img, data, models)
+        response = dtnn.check_command(img, data)
 
     else:
         error = 'Error : Request method is only POST'
@@ -57,5 +57,5 @@ def spatial_analysis():
 
 
 if __name__ == "__main__":
-    models = dtnn.load_models()
+    dtnn.load_models()
     app.run(host='0.0.0.0')
