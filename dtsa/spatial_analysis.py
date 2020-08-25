@@ -39,10 +39,10 @@ class LinearLineOfSight(object):
 
     def analysis(self):
 
-        url = 'http://localhost:8080/geoserver/wps'
+        url = 'http://172.30.1.33:18080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
         geo_response = requests.post(url, data = self.xml_create(), headers=headers).text
-        geo_response = "Currently in testing phase"
+        # geo_response = "Currently in testing phase"
         return geo_response
 
     def xml_create(self):
