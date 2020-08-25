@@ -44,13 +44,18 @@ def predict():
 @app.route('/spatial-analysis', methods=['GET', 'POST'])
 def spatial_analysis():
     if request.method == 'POST':
+        content_type = request.mimetype
+        if content_type == 'application/json':
 
-        data = request.form
+            data = request.json
+            response = sa.check_command(data)
 
-        response = sa.check_command(data)
+        else:
+            error = 'Error : Request MIME type can only be application/json'
+            response = jsonify({'Error': error})
 
     else:
-        error = 'Error : Request method is only POST'
+        error = 'Error : Request method can only be POST'
         response = jsonify({'Error': error})
 
     return response

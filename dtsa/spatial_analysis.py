@@ -3,6 +3,9 @@ from flask import jsonify
 
 import requests
 
+import xmltodict
+import json
+
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
 
 
@@ -14,11 +17,11 @@ def check_command(data):
     if command == "linear_line_of_sight":
         LLOS = LinearLineOfSight(param['fileName'], param['coord'], param['boundingBox'],
                                     param['observerPoint'], param['observerOffset'], param['targetPoint'])
-        result = LLOS.analysis()
+        result = LLOS.xml_request()
     elif command == "calculate_cut_fill":
         CCF = CalculateCutFill(param['fileName'], param['coord'], param['boundingBox'],
                                   param['inputGeometry'], param['userMeanHeight'])
-        result = CCF.analysis()
+        result = CCF.xml_request()
 
     else:
         result = "The 'command' parameters that we support are 'linear_line_of_sight', " \
@@ -37,12 +40,51 @@ class LinearLineOfSight(object):
         self.observerOffset = observerOffset
         self.targetPoint = targetPoint
 
-    def analysis(self):
+    @staticmethod
+    def analysis(geo_response):
+        xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
+        iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
 
-        url = 'http://172.30.1.33:18080/geoserver/wps'
+        if isinstance(iter_dict, list):
+            visible_list = []
+
+            for i in iter_dict:
+                visible_list.append(i)
+        else:
+            visible_list = [iter_dict]
+
+        visible_dict = {}
+        print(visible_list)
+        for j in visible_list:
+            visible = int(j['feature:LinearLineOfSight']['feature:Visible'])
+            if visible == 0:
+                coord_list = j['feature:LinearLineOfSight']['feature:geom']['gml:MultiLineString']['gml:lineStringMember'][
+                    'gml:LineString']['gml:coordinates'].split()
+                temp_list = []
+                for coord in coord_list:
+                    x, y, _ = coord.split(',')
+                    temp_list.append([float(x), float(y)])
+                visible_dict['invisible'] = temp_list
+
+            else:
+                coord_list = j['feature:LinearLineOfSight']['feature:geom']['gml:MultiLineString']['gml:lineStringMember'][
+                    'gml:LineString']['gml:coordinates'].split()
+                temp_list = []
+                for coord in coord_list:
+                    x, y, _ = coord.split(',')
+                    temp_list.append([float(x), float(y)])
+                visible_dict['visible'] = temp_list
+
+        return visible_dict
+
+    def xml_request(self):
+
+        url = 'http://localhost:8080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data = self.xml_create(), headers=headers).text
+        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
         # geo_response = "Currently in testing phase"
+        geo_response = self.analysis(geo_response)
+
         return geo_response
 
     def xml_create(self):
@@ -119,7 +161,7 @@ class CalculateCutFill(object):
         self.inputGeometry = inputGeometry
         self.userMeanHeight = userMeanHeight
 
-    def analysis(self):
+    def xml_request(self):
 
         url = 'http://localhost:8080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
