@@ -40,8 +40,28 @@ class LinearLineOfSight(object):
         self.observerOffset = observerOffset
         self.targetPoint = targetPoint
 
+    def xml_request(self):
+
+        url = 'http://localhost:8080/geoserver/wps'
+        headers = {'Content-Type': 'text/xml;charset=utf-8'}
+        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
+        geo_response = self.analysis(geo_response)
+
+        return geo_response
+
     @staticmethod
     def analysis(geo_response):
+
+        def coord_parsing(coordinates):
+            coord_list = coordinates['feature:LinearLineOfSight']['feature:geom']['gml:MultiLineString']['gml:lineStringMember'][
+                'gml:LineString']['gml:coordinates'].split()
+            temp_list = []
+            for coord in coord_list:
+                x, y, _ = coord.split(',')
+                temp_list.append([float(x), float(y)])
+
+            return temp_list
+
         xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
         iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
 
@@ -54,38 +74,17 @@ class LinearLineOfSight(object):
             visible_list = [iter_dict]
 
         visible_dict = {}
-        print(visible_list)
-        for j in visible_list:
-            visible = int(j['feature:LinearLineOfSight']['feature:Visible'])
+        for l in visible_list:
+            visible = int(l['feature:LinearLineOfSight']['feature:Visible'])
             if visible == 0:
-                coord_list = j['feature:LinearLineOfSight']['feature:geom']['gml:MultiLineString']['gml:lineStringMember'][
-                    'gml:LineString']['gml:coordinates'].split()
-                temp_list = []
-                for coord in coord_list:
-                    x, y, _ = coord.split(',')
-                    temp_list.append([float(x), float(y)])
-                visible_dict['invisible'] = temp_list
+                xy_list = coord_parsing(l)
+                visible_dict['invisible'] = xy_list
 
             else:
-                coord_list = j['feature:LinearLineOfSight']['feature:geom']['gml:MultiLineString']['gml:lineStringMember'][
-                    'gml:LineString']['gml:coordinates'].split()
-                temp_list = []
-                for coord in coord_list:
-                    x, y, _ = coord.split(',')
-                    temp_list.append([float(x), float(y)])
-                visible_dict['visible'] = temp_list
+                xy_list = coord_parsing(l)
+                visible_dict['visible'] = xy_list
 
         return visible_dict
-
-    def xml_request(self):
-
-        url = 'http://localhost:8080/geoserver/wps'
-        headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        # geo_response = "Currently in testing phase"
-        geo_response = self.analysis(geo_response)
-
-        return geo_response
 
     def xml_create(self):
 
@@ -151,6 +150,7 @@ class LinearLineOfSight(object):
               '</wps:Execute>'
 
         return xml
+
 
 class CalculateCutFill(object):
 
