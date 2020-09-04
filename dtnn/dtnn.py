@@ -68,8 +68,11 @@ def check_command(img, data):
     result = {}
 
     if command == 'skyline_detection':
-
-        skyline = SkylineDetection(img, models[0])
+        try:
+            threshold = int(data['threshold'])
+        except:
+            threshold = 20
+        skyline = SkylineDetection(img, models[0], threshold)
         output_img = skyline.predict()
 
     elif command == 'view_shielding_rate':
@@ -93,11 +96,11 @@ def check_command(img, data):
 
 class SkylineDetection(object):
 
-    def __init__(self, file_img, model, color='B'):
+    def __init__(self, file_img, model, threshold):
         self.file_img = file_img
         self.img = Image.open(self.file_img)
         self.model = model
-        self.color = color
+        self.threshold = threshold
 
     def predict(self):
         # pre-processing image
@@ -109,7 +112,8 @@ class SkylineDetection(object):
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
 
         # after-processing image
-        clear_pred = image_processing.clear_img(resize_prediction)
+        clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
+        return clear_pred
         ridge = image_processing.y_ridge(clear_pred)
 
         # final output
@@ -137,6 +141,7 @@ class ViewShieldingRate(object):
 
         # after-processing image
         clear_pred = image_processing.clear_img(resize_prediction, threshold)
+
         ridge = image_processing.y_ridge(clear_pred)
 
         # final output

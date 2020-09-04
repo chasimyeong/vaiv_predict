@@ -17,7 +17,9 @@ def preprocessing_img(img):
 #     return clear
 
 #threshold를 parameter로 제공해보자
-def clear_img(img_arr, threshold=30):
+def clear_img(img_arr, threshold):
+
+    #_, clear = cv2.threshold(img_arr, threshold, 255, cv2.THRESH_BINARY)
     clear = np.where(img_arr < threshold, 0, img_arr)
     clear = np.where(clear > 0, 255, clear)
 
