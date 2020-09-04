@@ -30,8 +30,8 @@ def load_models():
 
     # models
     # The number after the model name refers to the channel
-    unet1_model_file = os.path.join(models_path, 'unet1_model.json')
-    unet3_model_file = os.path.join(models_path, 'unet3_model.json')
+    unet_sl_model_file = os.path.join(models_path, 'unet_sl_model.json')
+    unet_sr_model_file = os.path.join(models_path, 'unet_sr_model.json')
 
     # weights
     unet_weight_skyline_file = os.path.join(weights_path, 'skyline_detection_1.hdf5')
@@ -39,8 +39,8 @@ def load_models():
 
     # models load
     K.clear_session()
-    sky_unet = unet_model(unet1_model_file, unet_weight_skyline_file)
-    shield_unet = unet_model(unet1_model_file, unet_weight_shielding_file)
+    sky_unet = unet_model(unet_sl_model_file, unet_weight_skyline_file)
+    shield_unet = unet_model(unet_sr_model_file, unet_weight_shielding_file)
 
     models = [sky_unet, shield_unet]
 

@@ -5,7 +5,7 @@ block_cipher = None
 import os
 import importlib
 
-a = Analysis(['Dpredict_RestAPI_v0.3.py'],
+a = Analysis(['main.py'],
              pathex=['C:\\Users\\daumsoft\\Jupyter Notebook\\daumsoft\\LH Digital Twin Develop\\딥러닝_통합_API\\Dpredict'],
              binaries=[],
              datas=[(os.path.join(os.path.dirname(importlib.import_module('tensorflow').__file__),
@@ -28,7 +28,7 @@ exe = EXE(pyz,
           a.scripts,
           [],
           exclude_binaries=True,
-          name='Dpredict_RestAPI_v0.3',
+          name='main',
           debug=False,
           bootloader_ignore_signals=False,
           strip=False,
@@ -41,4 +41,4 @@ coll = COLLECT(exe,
                strip=False,
                upx=True,
                upx_exclude=[],
-               name='Dpredict_RestAPI_v0.3')
+               name='main')

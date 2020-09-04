@@ -3,7 +3,6 @@ import cv2
 
 from dtnn.utils import ColorPalette
 
-
 def preprocessing_img(img):
     one_ch_img = img.convert('L')
     input_arr = np.array(one_ch_img.resize((256, 256))) / 255
@@ -17,7 +16,8 @@ def preprocessing_img(img):
 #
 #     return clear
 
-def clear_img(img_arr, threshold=20):
+#threshold를 parameter로 제공해보자
+def clear_img(img_arr, threshold=30):
     clear = np.where(img_arr < threshold, 0, img_arr)
     clear = np.where(clear > 0, 255, clear)
 
@@ -42,11 +42,11 @@ def y_ridge(img_arr):
     return ridge_array
 
 
-def draw_polyline(img, ridge, color='W', thickness=5):
+def draw_polyline(img, ridge, color='B', thickness=5):
+    # png 파일 받을 경우 투명색으로 색칠됨
     cp = ColorPalette(color)
 
     ridge = ridge.astype(np.int32)
-
     polyline_img = cv2.polylines(img, [ridge], False, cp.color_mapping(), thickness, lineType=cv2.LINE_AA)
 
     return polyline_img
