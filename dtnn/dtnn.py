@@ -76,8 +76,11 @@ def check_command(img, data):
         output_img = skyline.predict()
 
     elif command == 'view_shielding_rate':
-
-        shielding = ViewShieldingRate(img, models[1])
+        try:
+            threshold = int(data['threshold'])
+        except:
+            threshold = 20
+        shielding = ViewShieldingRate(img, models[1], threshold)
         output_img, shielding_rate = shielding.predict()
         result['shielding_rate'] = shielding_rate
 
@@ -104,7 +107,7 @@ class SkylineDetection(object):
 
     def predict(self):
         # pre-processing image
-        input_arr = image_processing.preprocessing_img(self.img)
+        input_arr = image_processing.preprocessing(self.img)
 
         # prediction output
         predictions = self.model.predict(input_arr)
@@ -124,14 +127,15 @@ class SkylineDetection(object):
 
 class ViewShieldingRate(object):
 
-    def __init__(self, file_img, model):
+    def __init__(self, file_img, model, threshold):
         self.file_img = file_img
         self.img = Image.open(self.file_img)
         self.model = model
+        self.threshold = threshold
 
-    def predict(self, threshold=20):
+    def predict(self):
         # pre-processing image
-        input_arr = image_processing.preprocessing_img(self.img)
+        input_arr = image_processing.preprocessing(self.img)
 
         # prediction output
         predictions = self.model.predict(input_arr)
@@ -139,9 +143,8 @@ class ViewShieldingRate(object):
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
 
         # after-processing image
-        clear_pred = image_processing.clear_img(resize_prediction, threshold)
-
-        ridge = image_processing.y_ridge(clear_pred)
+        clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
+        ridge = self.contour(clear_pred)
 
         # final output
         resize_img = np.array(self.img, np.uint8)
@@ -159,3 +162,22 @@ class ViewShieldingRate(object):
 
         return shield_rate
 
+    # ridge와 같은 건데 이부분이 skyline그리는 부분이랑 조금달라서 어떻게 처리할지 고민
+    def contour(self, img_arr):
+        cols = img_arr.shape[1]
+        rows = img_arr.shape[0]
+
+        ridge = []
+
+        for c in range(cols):
+            for r in range(rows - 1, -1, -1):
+                row = img_arr[r][c]
+                if row > 0:
+                    ridge.append([c, r - 5])
+                    break
+
+        # ridge.append()
+
+        ridge_array = np.array(ridge)
+
+        return ridge_array

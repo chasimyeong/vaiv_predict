@@ -3,7 +3,7 @@ import cv2
 
 from dtnn.utils import ColorPalette
 
-def preprocessing_img(img):
+def preprocessing(img):
     one_ch_img = img.convert('L')
     input_arr = np.array(one_ch_img.resize((256, 256))) / 255
     input_arr = input_arr.reshape((1,) + input_arr.shape)
