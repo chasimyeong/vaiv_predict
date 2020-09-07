@@ -113,7 +113,6 @@ class SkylineDetection(object):
 
         # after-processing image
         clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
-        return clear_pred
         ridge = image_processing.y_ridge(clear_pred)
 
         # final output
