@@ -10,16 +10,10 @@ def preprocessing_img(img):
 
     return input_arr
 
-
-# def clear_img(img_arr, blocksize=31):
-#     clear = cv2.adaptiveThreshold(img_arr, 255, cv2.ADAPTIVE_THRESH_MEAN_C, cv2.THRESH_BINARY, blocksize, 0)
-#
-#     return clear
-
-#threshold를 parameter로 제공해보자
+# threshold를 parameter로 제공해보자
 def clear_img(img_arr, threshold):
 
-    #_, clear = cv2.threshold(img_arr, threshold, 255, cv2.THRESH_BINARY)
+    # _, clear = cv2.threshold(img_arr, threshold, 255, cv2.THRESH_BINARY)
     clear = np.where(img_arr < threshold, 0, img_arr)
     clear = np.where(clear > 0, 255, clear)
 
@@ -33,10 +27,10 @@ def y_ridge(img_arr):
     ridge = []
 
     for c in range(cols):
-        for r in range(rows):
+        for r in range(rows-1, -1, -1):
             row = img_arr[r][c]
             if row > 0:
-                ridge.append([c, r])
+                ridge.append([c, r-5])
                 break
 
     ridge_array = np.array(ridge)
