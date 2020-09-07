@@ -170,13 +170,27 @@ class ViewShieldingRate(object):
         ridge = []
 
         for c in range(cols):
-            for r in range(rows - 1, -1, -1):
+            for r in range(rows-1, -1, -1):
                 row = img_arr[r][c]
                 if row > 0:
                     ridge.append([c, r - 5])
                     break
 
-        # ridge.append()
+        #조망차폐율 계산하는 좌표는 따로 구현해야할 듯
+        for r in range(rows-1, -1, -1):
+            if img_arr[r][0] != 0:
+                break
+            elif r == 0:
+                ridge.insert(0, [-1, -1])
+
+        for r in range(rows-1, -1, -1):
+            if img_arr[r][cols-1] != 0:
+                break
+            elif r == 0:
+                ridge.append([cols, -1])
+
+        ridge.append([cols, rows])
+        ridge.append([-1, rows])
 
         ridge_array = np.array(ridge)
 
