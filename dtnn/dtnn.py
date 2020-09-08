@@ -31,7 +31,7 @@ def load_models():
     # models
     # The number after the model name refers to the channel
     unet_sl_model_file = os.path.join(models_path, 'unet_sl_model.json')
-    unet_sr_model_file = os.path.join(models_path, 'unet_sr_model.json')
+    unet_sr_model_file = os.path.join(models_path, 'unet_sl_model.json')
 
     # weights
     unet_weight_skyline_file = os.path.join(weights_path, 'skyline_detection_1.hdf5')
@@ -139,7 +139,8 @@ class ViewShieldingRate(object):
 
         # prediction output
         predictions = self.model.predict(input_arr)
-        prediction = np.array(np.round(predictions[0] * 255, 0), dtype='uint8')
+        prediction = np.array(predictions[0] * 255, dtype='uint8')
+        # prediction = np.array(np.round(predictions[0] * 255, 0), dtype='uint8')
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
 
         # after-processing image
@@ -148,7 +149,8 @@ class ViewShieldingRate(object):
 
         # final output
         resize_img = np.array(self.img, np.uint8)
-        output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
+        output_img = self.draw_contours(resize_img, ridge, color='BL', thickness=1)
+        # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
 
         return output_img, rate
@@ -157,41 +159,62 @@ class ViewShieldingRate(object):
         x = img.shape[1]
         y = img.shape[0]
 
-        contour_area = cv2.contourArea(contour)
+        contour_area = cv2.contourArea(contour[0])
         shield_rate = round((contour_area / (x * y)) * 100, 4)
 
         return shield_rate
+    # def shielding_rate(self, img, contour):
+    #     x = img.shape[1]
+    #     y = img.shape[0]
+    #
+    #     contour_area = cv2.contourArea(contour)
+    #     shield_rate = round((contour_area / (x * y)) * 100, 4)
+    #
+    #     return shield_rate
 
-    # ridge와 같은 건데 이부분이 skyline그리는 부분이랑 조금달라서 어떻게 처리할지 고민
     def contour(self, img_arr):
-        cols = img_arr.shape[1]
-        rows = img_arr.shape[0]
+        contours, _ = cv2.findContours(img_arr.astype('uint8'), cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
 
-        ridge = []
+        return contours
 
-        for c in range(cols):
-            for r in range(rows-1, -1, -1):
-                row = img_arr[r][c]
-                if row > 0:
-                    ridge.append([c, r - 5])
-                    break
+    def draw_contours(self, img, contour, color='BL', thickness=1):
 
-        #조망차폐율 계산하는 좌표는 따로 구현해야할 듯
-        for r in range(rows-1, -1, -1):
-            if img_arr[r][0] != 0:
-                break
-            elif r == 0:
-                ridge.insert(0, [-1, -1])
+        cp = image_processing.ColorPalette(color)
+        img_copy = img.copy()
+        cv2.drawContours(img_copy, contour, -1, cp.color_mapping(), thickness, lineType=cv2.LINE_AA)
 
-        for r in range(rows-1, -1, -1):
-            if img_arr[r][cols-1] != 0:
-                break
-            elif r == 0:
-                ridge.append([cols, -1])
+        return img_copy
 
-        ridge.append([cols, rows])
-        ridge.append([-1, rows])
-
-        ridge_array = np.array(ridge)
-
-        return ridge_array
+    # # ridge와 같은 건데 이부분이 skyline그리는 부분이랑 조금달라서 어떻게 처리할지 고민
+    # def contour(self, img_arr):
+    #     cols = img_arr.shape[1]
+    #     rows = img_arr.shape[0]
+    #
+    #     ridge = []
+    #
+    #     for c in range(cols):
+    #         for r in range(rows-1, -1, -1):
+    #             row = img_arr[r][c]
+    #             if row > 0:
+    #                 ridge.append([c, r - 5])
+    #                 break
+    #
+    #     #조망차폐율 계산하는 좌표는 따로 구현해야할 듯
+    #     for r in range(rows-1, -1, -1):
+    #         if img_arr[r][0] != 0:
+    #             break
+    #         elif r == 0:
+    #             ridge.insert(0, [-1, -1])
+    #
+    #     for r in range(rows-1, -1, -1):
+    #         if img_arr[r][cols-1] != 0:
+    #             break
+    #         elif r == 0:
+    #             ridge.append([cols, -1])
+    #
+    #     ridge.append([cols, rows])
+    #     ridge.append([-1, rows])
+    #
+    #     ridge_array = np.array(ridge)
+    #
+    #     return ridge_array
