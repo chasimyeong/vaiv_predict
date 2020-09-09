@@ -1,66 +1,21 @@
 #!/usr/bin/env python
 # coding: utf-8
-# v0.2
 
-import os
 import numpy as np
 
 import cv2
-
-from keras.models import model_from_json
-from keras.optimizers import Adam
-import keras.backend as K
 
 from PIL import Image
 
 from flask import jsonify
 
-from dtnn import image_processing
-from dtnn import utils
+from dtai import image_processing
+from dtai import utils
+
+from dtai.dtnn import Models
 
 
-def load_models():
-    global models
-
-    # Setting initial models and weights path
-    # fold path
-    ROOT_DIR = os.path.abspath('')
-    models_path = os.path.join(ROOT_DIR, 'models')
-    weights_path = os.path.join(models_path, 'weights')
-
-    # models
-    # The number after the model name refers to the channel
-    unet_sl_model_file = os.path.join(models_path, 'unet_sl_model.json')
-    unet_sr_model_file = os.path.join(models_path, 'unet_sl_model.json')
-
-    # weights
-    unet_weight_skyline_file = os.path.join(weights_path, 'skyline_detection_1.hdf5')
-    unet_weight_shielding_file = os.path.join(weights_path, 'view_shielding_rate_1.hdf5')
-
-    # models load
-    K.clear_session()
-    sky_unet = unet_model(unet_sl_model_file, unet_weight_skyline_file)
-    shield_unet = unet_model(unet_sr_model_file, unet_weight_shielding_file)
-
-    models = [sky_unet, shield_unet]
-
-def unet_model(model_file, weight_file):
-    # unet model
-    K.set_image_data_format('channels_last')
-    K.set_floatx('float64')
-
-    json_file = open(model_file, "r")
-    loaded_model_json = json_file.read()
-    json_file.close()
-
-    unet = model_from_json(loaded_model_json)
-    unet.load_weights(weight_file)
-
-    unet.compile(optimizer=Adam(lr=1e-4), loss='binary_crossentropy', metrics=['mse', 'mae'])
-    return unet
-
-
-def check_command(img, data):
+def api(img, data):
 
     command = data['command']
     img_format = data['format']
@@ -72,7 +27,7 @@ def check_command(img, data):
             threshold = int(data['threshold'])
         except:
             threshold = 20
-        skyline = SkylineDetection(img, models[0], threshold)
+        skyline = SkylineDetection(img, Models.models[0], threshold)
         output_img = skyline.predict()
 
     elif command == 'view_shielding_rate':
@@ -80,7 +35,7 @@ def check_command(img, data):
             threshold = int(data['threshold'])
         except:
             threshold = 20
-        shielding = ViewShieldingRate(img, models[1], threshold)
+        shielding = ViewShieldingRate(img, Models.models[1], threshold)
         output_img, shielding_rate = shielding.predict()
         result['shielding_rate'] = shielding_rate
 
@@ -119,7 +74,7 @@ class SkylineDetection(object):
         ridge = image_processing.y_ridge(clear_pred)
 
         # final output
-        resize_img = np.array(self.img, np.uint8)
+        resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
         output_img = image_processing.draw_polyline(resize_img, ridge)
 
         return output_img
@@ -148,7 +103,7 @@ class ViewShieldingRate(object):
         ridge = self.contour(clear_pred)
 
         # final output
-        resize_img = np.array(self.img, np.uint8)
+        resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
         output_img = self.draw_contours(resize_img, ridge, color='BL', thickness=1)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)

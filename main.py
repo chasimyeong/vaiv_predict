@@ -13,14 +13,14 @@ else:
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from dtnn import dtnn
+from dtai import process, dtnn
+# from dtai.dtnn import Models
 from dtsa import spatial_analysis as sa
 
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app)
-
 
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
@@ -31,8 +31,7 @@ def predict():
 
         # parameter
         data = request.form
-
-        response = dtnn.check_command(img, data)
+        response = process.api(img, data)
 
     else:
         error = 'Error : Request method is only POST'
@@ -48,7 +47,7 @@ def spatial_analysis():
         if content_type == 'application/json':
 
             data = request.json
-            response = sa.check_command(data)
+            response = sa.api(data)
 
         else:
             error = 'Error : Request MIME type can only be application/json'
@@ -62,5 +61,6 @@ def spatial_analysis():
 
 
 if __name__ == "__main__":
-    dtnn.load_models()
+    dtai_model = dtnn.Models()
+    dtai_model.load_models()
     app.run(host='0.0.0.0')

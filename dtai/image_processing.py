@@ -1,7 +1,7 @@
 import numpy as np
 import cv2
 
-from dtnn.utils import ColorPalette
+from dtai.utils import ColorPalette
 
 def preprocessing(img):
     one_ch_img = img.convert('L')

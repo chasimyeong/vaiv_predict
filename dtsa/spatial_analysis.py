@@ -9,7 +9,7 @@ import json
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
 
 
-def check_command(data):
+def api(data):
 
     command = data['command']
     param = data['parameter']
