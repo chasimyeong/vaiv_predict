@@ -11,8 +11,7 @@ a = Analysis(['main.py'],
              datas=[(os.path.join(os.path.dirname(importlib.import_module('tensorflow').__file__),
                                   "lite/experimental/microfrontend/python/ops/_audio_microfrontend_op.so"),
                      "tensorflow/lite/experimental/microfrontend/python/ops/"),
-                     ("models", "models/"),
-                     ("models/weights", "models/weights/")
+                     ("models", "models/")
                      ],
              hiddenimports=["tensorflow.python.keras.engine.base_layer_v1"],
              hookspath=[],
