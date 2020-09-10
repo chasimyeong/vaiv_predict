@@ -34,7 +34,6 @@ def predict():
 
     if request.method == 'POST':
         # input image
-        print(request.mimetype)
         img = request.files['image']
 
         # parameter

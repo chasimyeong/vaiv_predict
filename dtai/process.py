@@ -39,7 +39,6 @@ def api(img, data):
     command = data['command']
     img_format = data['format']
     color = data['color']
-    print(color)
     thickness = data['thickness']
 
     try:

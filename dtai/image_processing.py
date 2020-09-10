@@ -46,7 +46,6 @@ def y_ridge(img_arr):
 
 def draw_polyline(img, ridge, color=(51, 51, 255), thickness=5):
     # cp = ColorPalette(color)
-    print(color)
     if isinstance(color, str):
         if len(color) >= 9:
             color = ast.literal_eval(color)
