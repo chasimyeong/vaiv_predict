@@ -13,6 +13,7 @@ class Models(object):
     SKYLINE_MODEL = 0
     VIEW_SHIELDING_MODEL = 1
 
+    # Models
     models = []
 
     def __init__(self):

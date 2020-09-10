@@ -40,7 +40,7 @@ def predict():
         data = request.form
         # response = process.api(img, data)
         dtai = process.Config(img, data)
-        response = dtai.command_check()
+        response = dtai.api()
 
     else:
         error = 'Error : Request method is only POST'

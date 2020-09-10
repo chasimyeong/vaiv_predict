@@ -23,37 +23,37 @@ class Config(object):
     def __init__(self, img, data):
         self.img = img
         self.data = data
+        self.command = data.get('command')
+        self.img_format = data.get('format')
 
-    def command_check(self):
+    def api(self):
+        result = self.__command_check()
+        output_format = utils.OutputFormat(result['output_img'], self.img_format)
+        result['output_img'] = output_format.trans_format()
 
-        result = {}
-        command = self.data.get('command')
-        img_format = self.data.get('format')
+        return jsonify({'command': self.command, 'result': result})
 
-        if command == 'skyline_detection':
+    def __command_check(self):
+
+        if self.command == 'skyline_detection':
             params = ['threshold', 'color', 'thickness']
             parameter_dict = self.__get_parameter(params)
-            skyline = SkylineDetection(self.img, **parameter_dict)
-            output_img = skyline.predict()
+            sld = SkylineDetection(self.img, **parameter_dict)
+            output = sld.predict()
 
-        elif command == 'view_shielding_rate':
+        elif self.command == 'view_shielding_rate':
             params = ['threshold', 'color', 'thickness']
             parameter_dict = self.__get_parameter(params)
-            shielding = ViewShieldingRate(self.img, **parameter_dict)
-            output_img, shielding_rate = shielding.predict()
-            result['shielding_rate'] = shielding_rate
+            vsr = ViewShieldingRate(self.img, **parameter_dict)
+            output = vsr.predict()
 
         else:
-            command = "The 'command' parameters that we support are 'skyline_detection', " \
+            self.command = "The 'command' parameters that we support are 'skyline_detection', " \
                       "'view_shielding_rate'"
 
-            return jsonify({'Error': command})
+            return jsonify({'Error': self.command})
 
-        output_format = utils.OutputFormat(output_img, img_format)
-        final_img = output_format.trans_format()
-        result['output_img'] = final_img
-
-        return jsonify({'command': command, 'result': result})
+        return output
 
     def __get_parameter(self, parameter):
 
@@ -65,10 +65,9 @@ class Config(object):
         return parameter_dict
 
 
-
 class SkylineDetection(object):
 
-    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=0):
+    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1):
         self.img = Image.open(img_file)
         self.threshold = threshold
         self.color = color
@@ -92,12 +91,12 @@ class SkylineDetection(object):
         resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
         output_img = image_processing.draw_polyline(resize_img, ridge, self.color, self.thickness)
 
-        return output_img
+        return {'output_img': output_img}
 
 
 class ViewShieldingRate(object):
 
-    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=0):
+    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1):
         self.img = Image.open(img_file)
         self.threshold = threshold
         self.color = color
@@ -126,7 +125,7 @@ class ViewShieldingRate(object):
         output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
-        return output_img, rate
+        return {'output_img': output_img, 'shielding_rate': rate}
 
     def shielding_rate(self, img, contour):
         x = img.shape[1]
