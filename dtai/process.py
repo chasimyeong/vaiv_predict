@@ -8,7 +8,6 @@ import cv2
 import ast
 
 from PIL import ImageColor
-
 from PIL import Image
 
 from flask import jsonify
@@ -18,68 +17,63 @@ from dtai import utils
 
 from dtai.dtnn import Models
 
-# class Config(object):
-#     def __init__(self, img, data):
-#         self.img = img
-#         self.command = data['command']
-#         self.img_format = data['format']
-#
-#         if 'threshold' in data:
-#             self.threshold = data['threshold']
-#
-#     def command_check(self):
-#
-#
-#     def response(self):
-#
 
+class Config(object):
 
-def api(img, data):
+    def __init__(self, img, data):
+        self.img = img
+        self.data = data
 
-    command = data['command']
-    img_format = data['format']
-    color = data['color']
-    thickness = data['thickness']
+    def command_check(self):
 
-    try:
-        threshold = int(data['threshold'])
-    except:
-        threshold = 20
+        result = {}
+        command = self.data.get('command')
+        img_format = self.data.get('format')
 
-    result = {}
+        if command == 'skyline_detection':
+            params = ['threshold', 'color', 'thickness']
+            parameter_dict = self.__get_parameter(params)
+            skyline = SkylineDetection(self.img, **parameter_dict)
+            output_img = skyline.predict()
 
-    if command == 'skyline_detection':
-        skyline = SkylineDetection(img, Models.models[0], threshold, color, thickness)
-        output_img = skyline.predict()
+        elif command == 'view_shielding_rate':
+            params = ['threshold', 'color', 'thickness']
+            parameter_dict = self.__get_parameter(params)
+            shielding = ViewShieldingRate(self.img, **parameter_dict)
+            output_img, shielding_rate = shielding.predict()
+            result['shielding_rate'] = shielding_rate
 
-    elif command == 'view_shielding_rate':
+        else:
+            command = "The 'command' parameters that we support are 'skyline_detection', " \
+                      "'view_shielding_rate'"
 
-        shielding = ViewShieldingRate(img, Models.models[1], threshold, color, thickness)
-        output_img, shielding_rate = shielding.predict()
-        result['shielding_rate'] = shielding_rate
+            return jsonify({'Error': command})
 
-    else:
-        command = "The 'command' parameters that we support are 'skyline_detection', " \
-                  "'view_shielding_rate'"
+        output_format = utils.OutputFormat(output_img, img_format)
+        final_img = output_format.trans_format()
+        result['output_img'] = final_img
 
-        return jsonify({'Error': command})
+        return jsonify({'command': command, 'result': result})
 
-    output_format = utils.OutputFormat(output_img, img_format)
-    final_img = output_format.trans_format()
-    result['output_img'] = final_img
+    def __get_parameter(self, parameter):
 
-    return jsonify({'command': command, 'result': result})
+        parameter_dict = dict()
+        for p in parameter:
+            if p in self.data:
+                parameter_dict[p] = self.data[p]
+
+        return parameter_dict
+
 
 
 class SkylineDetection(object):
 
-    def __init__(self, file_img, model, threshold, color, thickness):
-        self.file_img = file_img
-        self.img = Image.open(self.file_img)
-        self.model = model
+    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=0):
+        self.img = Image.open(img_file)
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
+        self.model = Models.models[Models.SKYLINE_MODEL]
 
     def predict(self):
         # pre-processing image
@@ -103,13 +97,12 @@ class SkylineDetection(object):
 
 class ViewShieldingRate(object):
 
-    def __init__(self, file_img, model, threshold, color, thickness):
-        self.file_img = file_img
-        self.img = Image.open(self.file_img)
-        self.model = model
+    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=0):
+        self.img = Image.open(img_file)
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
+        self.model = Models.models[Models.VIEW_SHIELDING_MODEL]
 
     def predict(self):
         # pre-processing image
