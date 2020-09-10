@@ -13,8 +13,10 @@ else:
 from flask import Flask, request, jsonify
 from flask_cors import CORS
 
-from dtai import process, dtnn
-# from dtai.dtnn import Models
+import tensorflow as tf
+
+from dtai import process
+from dtai.dtnn import Models
 from dtsa import spatial_analysis as sa
 
 warnings.filterwarnings('ignore')
@@ -61,6 +63,12 @@ def spatial_analysis():
 
 
 if __name__ == "__main__":
-    dtai_model = dtnn.Models()
+    physical_devices = tf.config.list_physical_devices('GPU')
+    try:
+        tf.config.experimental.set_memory_growth(physical_devices[0], True)
+    except:
+        print('Invalid device or cannot modify virtual devices once initialized.')
+
+    dtai_model = Models()
     dtai_model.load_models()
     app.run(host='0.0.0.0')
