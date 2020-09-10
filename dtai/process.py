@@ -123,21 +123,26 @@ class ViewShieldingRate(object):
 
         # after-processing image
         clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
+        # cv2.floodFill(clear_pred, None, (0, self.img.size[1] - 1), 255)
+
         ridge = self.contour(clear_pred)
+
 
         # final output
         resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
         output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
-
         return output_img, rate
 
     def shielding_rate(self, img, contour):
         x = img.shape[1]
         y = img.shape[0]
 
-        contour_area = cv2.contourArea(contour[0])
+        contour_area = 0
+        for c in contour:
+            contour_area += cv2.contourArea(c)
+        # contour_area = cv2.contourArea(contour[0])
         shield_rate = round((contour_area / (x * y)) * 100, 4)
 
         return shield_rate
@@ -151,7 +156,7 @@ class ViewShieldingRate(object):
     #     return shield_rate
 
     def contour(self, img_arr):
-        contours, _ = cv2.findContours(img_arr.astype('uint8'), cv2.RETR_LIST, cv2.CHAIN_APPROX_TC89_KCOS)
+        contours, _ = cv2.findContours(img_arr.astype('uint8'), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
 
         return contours
 
