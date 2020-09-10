@@ -5,6 +5,10 @@ import numpy as np
 
 import cv2
 
+import ast
+
+from PIL import ImageColor
+
 from PIL import Image
 
 from flask import jsonify
@@ -14,28 +18,44 @@ from dtai import utils
 
 from dtai.dtnn import Models
 
+# class Config(object):
+#     def __init__(self, img, data):
+#         self.img = img
+#         self.command = data['command']
+#         self.img_format = data['format']
+#
+#         if 'threshold' in data:
+#             self.threshold = data['threshold']
+#
+#     def command_check(self):
+#
+#
+#     def response(self):
+#
+
 
 def api(img, data):
 
     command = data['command']
     img_format = data['format']
+    color = data['color']
+    print(color)
+    thickness = data['thickness']
+
+    try:
+        threshold = int(data['threshold'])
+    except:
+        threshold = 20
 
     result = {}
 
     if command == 'skyline_detection':
-        try:
-            threshold = int(data['threshold'])
-        except:
-            threshold = 20
-        skyline = SkylineDetection(img, Models.models[0], threshold)
+        skyline = SkylineDetection(img, Models.models[0], threshold, color, thickness)
         output_img = skyline.predict()
 
     elif command == 'view_shielding_rate':
-        try:
-            threshold = int(data['threshold'])
-        except:
-            threshold = 20
-        shielding = ViewShieldingRate(img, Models.models[1], threshold)
+
+        shielding = ViewShieldingRate(img, Models.models[1], threshold, color, thickness)
         output_img, shielding_rate = shielding.predict()
         result['shielding_rate'] = shielding_rate
 
@@ -54,11 +74,13 @@ def api(img, data):
 
 class SkylineDetection(object):
 
-    def __init__(self, file_img, model, threshold):
+    def __init__(self, file_img, model, threshold, color, thickness):
         self.file_img = file_img
         self.img = Image.open(self.file_img)
         self.model = model
         self.threshold = threshold
+        self.color = color
+        self.thickness = thickness
 
     def predict(self):
         # pre-processing image
@@ -75,18 +97,20 @@ class SkylineDetection(object):
 
         # final output
         resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
-        output_img = image_processing.draw_polyline(resize_img, ridge)
+        output_img = image_processing.draw_polyline(resize_img, ridge, self.color, self.thickness)
 
         return output_img
 
 
 class ViewShieldingRate(object):
 
-    def __init__(self, file_img, model, threshold):
+    def __init__(self, file_img, model, threshold, color, thickness):
         self.file_img = file_img
         self.img = Image.open(self.file_img)
         self.model = model
         self.threshold = threshold
+        self.color = color
+        self.thickness = thickness
 
     def predict(self):
         # pre-processing image
@@ -104,7 +128,7 @@ class ViewShieldingRate(object):
 
         # final output
         resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
-        output_img = self.draw_contours(resize_img, ridge, color='BL', thickness=1)
+        output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
 
@@ -132,11 +156,24 @@ class ViewShieldingRate(object):
 
         return contours
 
-    def draw_contours(self, img, contour, color='BL', thickness=1):
+    def draw_contours(self, img, contour, color=(0, 0, 0), thickness=1):
 
-        cp = image_processing.ColorPalette(color)
+        # cp = image_processing.ColorPalette(color)
+
+        if isinstance(color, str):
+            if len(color) >= 9:
+                color = ast.literal_eval(color)
+            else:
+                if len(color) == 6:
+                    color = '#' + color
+
+                color = ImageColor.getcolor(color, 'RGB')
+
+        if isinstance(thickness, str):
+            thickness = int(thickness)
+
         img_copy = img.copy()
-        cv2.drawContours(img_copy, contour, -1, cp.color_mapping(), thickness, lineType=cv2.LINE_AA)
+        cv2.drawContours(img_copy, contour, -1, color, thickness, lineType=cv2.LINE_AA)
 
         return img_copy
 

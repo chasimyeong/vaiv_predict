@@ -4,6 +4,10 @@
 import numpy as np
 import cv2
 
+import ast
+
+from PIL import ImageColor
+
 from dtai.utils import ColorPalette
 
 def preprocessing(img):
@@ -40,11 +44,22 @@ def y_ridge(img_arr):
     return ridge_array
 
 
-def draw_polyline(img, ridge, color='B', thickness=5):
-    # png 파일 받을 경우 투명색으로 색칠됨
-    cp = ColorPalette(color)
+def draw_polyline(img, ridge, color=(51, 51, 255), thickness=5):
+    # cp = ColorPalette(color)
+    print(color)
+    if isinstance(color, str):
+        if len(color) >= 9:
+            color = ast.literal_eval(color)
+        else:
+            if len(color) == 6:
+                color = '#' + color
+
+            color = ImageColor.getcolor(color, 'RGB')
+
+    if isinstance(thickness, str):
+        thickness = int(thickness)
 
     ridge = ridge.astype(np.int32)
-    polyline_img = cv2.polylines(img, [ridge], False, cp.color_mapping(), thickness, lineType=cv2.LINE_AA)
+    polyline_img = cv2.polylines(img, [ridge], False, color, thickness, lineType=cv2.LINE_AA)
 
     return polyline_img

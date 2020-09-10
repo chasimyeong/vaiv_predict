@@ -24,11 +24,17 @@ warnings.filterwarnings('ignore')
 app = Flask(__name__)
 CORS(app)
 
+
+@app.route('/')
+def security():
+    return '<h1>Who are you?<h1>'
+
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
 
     if request.method == 'POST':
         # input image
+        print(request.mimetype)
         img = request.files['image']
 
         # parameter
