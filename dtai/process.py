@@ -10,6 +10,8 @@ import ast
 from PIL import ImageColor
 from PIL import Image
 
+from skimage.measure import compare_ssim
+
 from flask import jsonify
 
 from dtai import image_processing
@@ -46,6 +48,12 @@ class Config(object):
             parameter_dict = self.__get_parameter(params)
             vsr = ViewShieldingRate(self.img, **parameter_dict)
             output = vsr.predict()
+
+        elif self.command == 'find_difference':
+            params = ['color', 'alpha']
+            parameter_dict = self.__get_parameter(params)
+            fd = FindDifference(self.img, **parameter_dict)
+            output = fd.result()
 
         else:
             self.command = "The 'command' parameters that we support are 'skyline_detection', " \
@@ -206,3 +214,47 @@ class ViewShieldingRate(object):
     #     ridge_array = np.array(ridge)
     #
     #     return ridge_array
+
+
+class FindDifference(object):
+
+    def __init__(self, img_file, color='[0, 0, 0]', alpha=0.9):
+        imgs = img_file.getlist('images')
+        #추후 png인지 아닌지에 따라 다르게 처리하도록 할 것
+        self.before_img = np.array(Image.open(imgs[0]).convert('RGB'))
+        self.after_img = np.array(Image.open(imgs[1]).convert('RGB'))
+        self.color = ast.literal_eval(color)
+        self.alpha = float(alpha)
+
+    def result(self):
+        before, detection = self.__img2rgba()
+        final_before = Image.fromarray(before)
+        final_detection = Image.fromarray(detection)
+        final = np.array(Image.alpha_composite(final_before, final_detection))
+
+        return {'output_img': final}
+
+    def __difference_img(self):
+        gray_before = cv2.cvtColor(self.before_img, cv2.COLOR_RGB2GRAY)
+        gray_after = cv2.cvtColor(self.after_img, cv2.COLOR_RGB2GRAY)
+
+        # 주석처리된 부분은 픽셀값만 계산하는 것이 아닌 채도? 뭐 등등 계산해서 도출해냄
+        # (score, diff) = compare_ssim(gray_before, gray_after, full=True)
+        # diff = (255 - (diff * 255)).astype("uint8")
+        absdiff = cv2.absdiff(gray_before, gray_after)  # 우선 이걸 사용하도록
+
+        _, thres = cv2.threshold(absdiff, 0, 255, cv2.THRESH_BINARY | cv2.THRESH_OTSU)
+
+        return thres
+
+    def __img2rgba(self):
+        thres = self.__difference_img()
+        before_img_4 = cv2.cvtColor(self.before_img, cv2.COLOR_RGB2RGBA)
+        thres_4 = cv2.cvtColor(thres, cv2.COLOR_GRAY2RGBA)
+
+        color_thres_4 = thres_4.copy()
+        print(self.color + [int(255 * self.alpha)])
+        color_thres_4[thres == 255] = self.color + [int(255 * self.alpha)]
+        color_thres_4[thres != 255] = [0, 0, 0, 0]
+
+        return before_img_4, color_thres_4

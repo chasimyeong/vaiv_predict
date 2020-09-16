@@ -34,12 +34,32 @@ def predict():
 
     if request.method == 'POST':
         # input image
+
         img = request.files['image']
 
         # parameter
         data = request.form
         # response = process.api(img, data)
         dtai = process.Config(img, data)
+        response = dtai.api()
+
+    else:
+        error = 'Error : Request method is only POST'
+        response = jsonify({'Error': error})
+
+    return response
+
+
+@app.route('/landscape', methods=['GET', 'POST'])
+def landscape():
+
+    if request.method == 'POST':
+        # input image
+        imgs = request.files
+        # parameter
+        data = request.form
+        # response = process.api(img, data)
+        dtai = process.Config(imgs, data)
         response = dtai.api()
 
     else:
