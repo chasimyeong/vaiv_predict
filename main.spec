@@ -6,12 +6,13 @@ import os
 import importlib
 
 a = Analysis(['main.py'],
-             pathex=['C:\\Users\\daumsoft\\Jupyter Notebook\\daumsoft\\LH Digital Twin Develop\\딥러닝_통합_API\\Dpredict'],
+             pathex=['C:\\Users\\daumsoft\\Jupyter Notebook\\daumsoft\\LH Digital Twin Develop\\dl_integrated_API\\Dpredict'],
              binaries=[],
              datas=[(os.path.join(os.path.dirname(importlib.import_module('tensorflow').__file__),
                                   "lite/experimental/microfrontend/python/ops/_audio_microfrontend_op.so"),
                      "tensorflow/lite/experimental/microfrontend/python/ops/"),
-                     ("models", "models/")
+                     ("models", "models/"),
+                     ("models/weights", "models/weights/")
                      ],
              hiddenimports=["tensorflow.python.keras.engine.base_layer_v1"],
              hookspath=[],

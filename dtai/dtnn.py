@@ -27,19 +27,24 @@ class Models(object):
         # models_path
         skyline_model_path = os.path.join(self.models_path, 'unet_sl_1024_1_model.json')
         view_shielding_model_path = os.path.join(self.models_path, 'unet_vs_1024_1_model.json')
+        view_shielding_3_model_path = os.path.join(self.models_path, 'unet_vs_1024_3_model.json')
 
         # models load
         skyline_model = self.__keras_model(skyline_model_path)
         view_shielding_model = self.__keras_model(view_shielding_model_path)
+        view_shielding_3_model = self.__keras_model(view_shielding_3_model_path)
 
         # weights_path
         skyline_weight_path = os.path.join(self.weights_path, 'unet_sl_1024_1_weight_white_building.hdf5')
         view_shielding_weight_path = os.path.join(self.weights_path, 'unet_vs_1024_1_weight.hdf5')
+        view_shielding_3_weight_path = os.path.join(self.weights_path, 'unet_vs_1024_3_weight.hdf5')
 
         # weights load
         skyline_model.load_weights(skyline_weight_path)
-        view_shielding_model.load_weights(view_shielding_weight_path)
-        Models.models = [skyline_model, view_shielding_model]
+        # view_shielding_model.load_weights(view_shielding_weight_path)
+        view_shielding_3_model.load_weights(view_shielding_3_weight_path)
+
+        Models.models = [skyline_model, view_shielding_3_model]
 
     # def load_models(self):
     #     json_file = open("model.json", "r")

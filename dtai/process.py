@@ -86,7 +86,7 @@ class SkylineDetection(object):
 
     def predict(self):
         # pre-processing image
-        input_arr = image_processing.preprocessing(self.img)
+        input_arr = image_processing.preprocessing(self.img, 'L')
 
         # prediction output
         predictions = self.model.predict(input_arr)
@@ -115,7 +115,7 @@ class ViewShieldingRate(object):
 
     def predict(self):
         # pre-processing image
-        input_arr = image_processing.preprocessing(self.img)
+        input_arr = image_processing.preprocessing(self.img, 'RGB')
 
         # prediction output
         predictions = self.model.predict(input_arr)
@@ -135,7 +135,8 @@ class ViewShieldingRate(object):
         output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
-        return {'output_img': resize_prediction, 'shielding_rate': rate}
+        # return {'output_img': resize_prediction, 'shielding_rate': rate}
+        return {'output_img': output_img, 'shielding_rate': rate}
 
     def shielding_rate(self, img, contour):
         x = img.shape[1]

@@ -10,14 +10,20 @@ from PIL import ImageColor
 
 from dtai.utils import ColorPalette
 
-def preprocessing(img):
-    one_ch_img = img.convert('L')
+
+def preprocessing(img, cmap):
+    # if cmap == 'gray':
+    #     cmap = 'L'
+    # elif cmap == 'rgb':
+    #     cmap = 'RGB'
+
+    one_ch_img = img.convert(cmap)
     input_arr = np.array(one_ch_img.resize((256, 256))) / 255
     input_arr = input_arr.reshape((1,) + input_arr.shape)
 
     return input_arr
 
-# threshold를 parameter로 제공해보자
+
 def clear_img(img_arr, threshold):
     _, clear = cv2.threshold(img_arr, int(threshold), 255, cv2.THRESH_BINARY)
     # clear = np.where(img_arr < threshold, 0, img_arr)
