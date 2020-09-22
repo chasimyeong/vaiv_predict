@@ -29,6 +29,7 @@ CORS(app)
 def security():
     return '<h1>Who are you?<h1>'
 
+
 @app.route('/predict', methods=['GET', 'POST'])
 def predict():
 
@@ -97,5 +98,5 @@ if __name__ == "__main__":
         print('Invalid device or cannot modify virtual devices once initialized.')
 
     dtai_model = Models()
-    dtai_model.load_models()
+    dtai_model.load()
     app.run(host='0.0.0.0')

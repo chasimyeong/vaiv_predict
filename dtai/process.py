@@ -90,7 +90,7 @@ class SkylineDetection(object):
         predictions = self.model.predict(input_arr)
         prediction = np.array(np.round(predictions[0] * 255, 0), dtype='uint8')
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
-
+        # return {'output_img': resize_prediction}
         # after-processing image
         clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
         ridge = image_processing.y_ridge(clear_pred)
@@ -133,7 +133,7 @@ class ViewShieldingRate(object):
         output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
-        return {'output_img': output_img, 'shielding_rate': rate}
+        return {'output_img': resize_prediction, 'shielding_rate': rate}
 
     def shielding_rate(self, img, contour):
         x = img.shape[1]
@@ -218,7 +218,7 @@ class ViewShieldingRate(object):
 
 class FindDifference(object):
 
-    def __init__(self, img_file, color='[0, 0, 0]', alpha=0.9):
+    def __init__(self, img_file, color='[0, 0, 0]', alpha=0.8):
         imgs = img_file.getlist('images')
         #추후 png인지 아닌지에 따라 다르게 처리하도록 할 것
         self.before_img = np.array(Image.open(imgs[0]).convert('RGB'))
