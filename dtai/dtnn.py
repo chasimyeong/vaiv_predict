@@ -8,12 +8,12 @@ import keras.backend as K
 
 from keras.models import model_from_json
 
+# Model index
+SKYLINE_MODEL = 0
+VIEW_SHIELDING_MODEL = 1
+
 
 class Models(object):
-
-    # Model index
-    SKYLINE_MODEL = 0
-    VIEW_SHIELDING_MODEL = 1
 
     # Models
     models = []

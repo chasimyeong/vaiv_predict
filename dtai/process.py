@@ -17,7 +17,9 @@ from flask import jsonify
 from dtai import image_processing
 from dtai import utils
 
+from dtai import dtnn
 from dtai.dtnn import Models
+
 
 
 class Config(object):
@@ -80,7 +82,7 @@ class SkylineDetection(object):
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
-        self.model = Models.models[Models.SKYLINE_MODEL]
+        self.model = Models.models[dtnn.SKYLINE_MODEL]
 
     def predict(self):
         # pre-processing image
@@ -109,7 +111,7 @@ class ViewShieldingRate(object):
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
-        self.model = Models.models[Models.VIEW_SHIELDING_MODEL]
+        self.model = Models.models[dtnn.VIEW_SHIELDING_MODEL]
 
     def predict(self):
         # pre-processing image
