@@ -23,6 +23,10 @@ def api(data):
                                   param['inputGeometry'], param['userMeanHeight'])
         result = CCF.xml_request()
 
+    elif command == "calculate_area":
+        CA = CalculateArea(param['fileName'])
+        result = CA.xml_request()
+
     else:
         result = "The 'command' parameters that we support are 'linear_line_of_sight', " \
                    "'calculate_cut_fill'"
@@ -42,9 +46,10 @@ class LinearLineOfSight(object):
 
     def xml_request(self):
 
-        url = 'http://localhost:8080/geoserver/wps'
+        url = 'http://localhost:18080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
         geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
+        print(geo_response)
         geo_response = self.analysis(geo_response)
 
         return geo_response
@@ -154,7 +159,7 @@ class LinearLineOfSight(object):
 
 class CalculateCutFill(object):
 
-    def __init__(self, fileName, coord, boundingBox, inputGeometry, userMeanHeight):
+    def __init__(self, fileName, coord, boundingBox, inputGeometry, userMeanHeight=-9999):
         self.fileName = fileName
         self.coord = coord
         self.boundingBox = boundingBox
@@ -163,12 +168,78 @@ class CalculateCutFill(object):
 
     def xml_request(self):
 
-        url = 'http://localhost:8080/geoserver/wps'
+        url = 'http://localhost:18080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
+        print(self.xml_create())
         geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-
-        geo_response = "Currently in testing phase"
+        geo_response = self.analysis(geo_response)
         return geo_response
+
+    @staticmethod
+    def analysis(geo_response):
+
+        def coord_parsing(coordinates):
+            coord_list = coordinates['feature:geom']['gml:MultiPolygon']['gml:polygonMember']
+
+            final_coord_list = []
+            for c in coord_list:
+                coord_dict = {}
+                polygon = c['gml:Polygon']
+                for k in polygon.keys():
+                    if isinstance(polygon[k], list):
+                        temp_list = []
+                        for p in polygon[k]:
+                            temp_list.append(p['gml:LinearRing']['gml:coordinates'].split())
+
+                    else:
+                        temp_list = [polygon[k]['gml:LinearRing']['gml:coordinates'].split()]
+
+                    coord_dict[k] = temp_list
+
+                final_coord_list.append(coord_dict)
+
+            return final_coord_list
+
+        def parsing(parsing_dict):
+
+            parsed_dict = {}
+
+            category = int(parsing_dict['feature:category'])
+            if category == -1:
+                category = 'fill'
+
+            elif category == 1:
+                category = 'cut'
+
+            else:
+                category = 'none'
+
+            parsed_dict['area'] = parsing_dict['feature:area']
+            parsed_dict['category'] = category
+            parsed_dict['count'] = parsing_dict['feature:count']
+            parsed_dict['volume'] = parsing_dict['feature:volume']
+            parsed_dict['coordinates'] = coord_parsing(parsing_dict)
+
+            return parsed_dict
+
+        xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
+        iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
+
+        if isinstance(iter_dict, list):
+            category_list = []
+
+            for i in iter_dict:
+                category_list.append(i)
+        else:
+            category_list = [iter_dict]
+
+        final_list = []
+        for l in category_list:
+
+            cutfill_dict = l['feature:CutFill']
+            final_list.append(parsing(cutfill_dict))
+
+        return final_list
 
     def xml_create(self):
 
@@ -183,10 +254,10 @@ class CalculateCutFill(object):
               'xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" ' \
               'xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ' \
               'http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">' \
-              '<ows:Identifier>kopss:KM_CalculateCutFill</ows:Identifier>' \
+              '<ows:Identifier>statistics:RasterCutFill</ows:Identifier>' \
               '<wps:DataInputs>' \
               '<wps:Input>' \
-              '<ows:Identifier>inputDem</ows:Identifier>' \
+              '<ows:Identifier>inputCoverage</ows:Identifier>' \
               '<wps:Reference mimeType="image/tiff" ' \
               'xlink:href="http://geoserver/wcs" method="POST">' \
               '<wps:Body>' \
@@ -204,7 +275,7 @@ class CalculateCutFill(object):
               '</wps:Reference>' \
               '</wps:Input>' \
               '<wps:Input>' \
-              '<ows:Identifier>inputGeometry</ows:Identifier>' \
+              '<ows:Identifier>cropShape</ows:Identifier>' \
               '<wps:Data>' \
               '<wps:ComplexData mimeType="application/wkt">' \
               '<![CDATA[MULTIPOLYGON(((' + str(self.inputGeometry) + ')))]]>' \
@@ -212,14 +283,14 @@ class CalculateCutFill(object):
               '</wps:Data>' \
               '</wps:Input>' \
               '<wps:Input>' \
-              '<ows:Identifier>userMeanHeight</ows:Identifier>' \
+              '<ows:Identifier>baseHeight</ows:Identifier>' \
               '<wps:Data>' \
               '<wps:LiteralData>' + str(self.userMeanHeight) + '</wps:LiteralData>' \
               '</wps:Data>' \
               '</wps:Input>' \
               '</wps:DataInputs>' \
               '<wps:ResponseForm>' \
-              '<wps:RawDataOutput mimeType="text/xml">'\
+              '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">'\
               '<ows:Identifier>result</ows:Identifier>' \
               '</wps:RawDataOutput>' \
               '</wps:ResponseForm>' \
@@ -227,6 +298,69 @@ class CalculateCutFill(object):
 
         return xml
 
+class CalculateArea(object):
+    def __init__(self, fileName):
+        self.fileName = fileName
+
+    @staticmethod
+    #내일 이부분 만들고 테스트 해보기
+    #그전에 geoserver layer 등록해야됨
+    #적당한 shape?을 찾아야할듯 이전에 했던거 잘 기억해서 해보자구~
+    def analysis(geo_response):
+        final = []
+        return final
+
+    def xml_request(self):
+
+        url = 'http://localhost:18080/geoserver/wps'
+        headers = {'Content-Type': 'text/xml;charset=utf-8'}
+        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
+        geo_response = self.analysis(geo_response)
+        return geo_response
+
+    def xml_create(self):
+
+        xml = '<?xml version="1.0" encoding="UTF-8"?>' \
+              '<wps:Execute version="1.0.0" service="WPS" ' \
+              'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wps/1.0.0" ' \
+              'xmlns:wfs="http://www.opengis.net/wfs" xmlns:wps="http://www.opengis.net/wps/1.0.0" ' \
+              'xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:gml="http://www.opengis.net/gml" ' \
+              'xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" ' \
+              'xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ' \
+              'http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">' \
+              '<ows:Identifier>statistics:CalculateArea</ows:Identifier>' \
+              '<wps:DataInputs>' \
+              '<wps:Input>' \
+              '<ows:Identifier>inputFeatures</ows:Identifier>' \
+              '<wps:Reference mimeType="text/xml" ' \
+              'xlink:href="http://geoserver/wfs" method="POST">' \
+              '<wps:Body>' \
+              '<wfs:GetFeature service="WFS" version="1.0.0" outputFormat="GML2" xmlns:lhdt="lhdt">' \
+              '<wfs:Query typeName=' + self.fileName + '/>' \
+              '</wfs:GetFeature>' \
+              '</wps:Body>' \
+              '</wps:Reference>' \
+              '</wps:Input>' \
+              '<wps:Input>' \
+              '<ows:Identifier>areaUnit</ows:Identifier>' \
+              '<wps:Data>' \
+              '<wps:LiteralData>Default</wps:LiteralData>' \
+              '</wps:Data>' \
+              '</wps:Input>' \
+              '<ows:Identifier>areaUnit</ows:Identifier>' \
+              '<wps:Data>' \
+              '<wps:LiteralData>Default</wps:LiteralData>' \
+              '</wps:Data>' \
+              '</wps:Input>' \
+              '</wps:DataInputs>' \
+              '<wps:ResponseForm>' \
+              '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">' \
+              '<ows:Identifier>result</ows:Identifier>' \
+              '</wps:RawDataOutput>' \
+              '</wps:ResponseForm>' \
+              '</wps:Execute>'
+
+        return xml
 
 if __name__ == "__main__":
     data = 'ds:sejong_dem'

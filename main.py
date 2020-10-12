@@ -27,7 +27,7 @@ CORS(app)
 
 @app.route('/')
 def security():
-    return '<h1>Who are you?<h1>'
+    return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
 
 
 @app.route('/predict', methods=['GET', 'POST'])
