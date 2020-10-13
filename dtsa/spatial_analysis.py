@@ -6,41 +6,41 @@ import requests
 import xmltodict
 import json
 
-from dtsa import xml_create
+from dtsa.sa_xml import SARequest
 
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
-
-
 def api(data):
 
     command = data['command']
     param = data['parameter']
 
-    if command == "linear_line_of_sight":
+    command_list = ["linear_line_of_sight", "raster_cut_fill", "clip_with_geometry",
+                    "calculate_area"]
+
+    if command == command_list[0]:
         LLOS = LinearLineOfSight(param['fileName'], param['coord'], param['boundingBox'],
                                     param['observerPoint'], param['observerOffset'], param['targetPoint'])
         result = LLOS.xml_request()
-    elif command == "calculate_cut_fill":
-        CCF = CalculateCutFill(param['fileName'], param['coord'], param['boundingBox'],
+    elif command == command_list[1]:
+        RCF = RasterCutFill(param['fileName'], param['coord'], param['boundingBox'],
                                   param['inputGeometry'], param['userMeanHeight'])
-        result = CCF.xml_request()
+        result = RCF.xml_request()
 
-    elif command == "clip_with_geometry":
+    elif command == command_list[2]:
         CWG = ClipWithGeometry(param['fileName'], param['clipGeometry'])
         result = CWG.xml_request()
 
-    elif command == "calculate_area":
+    elif command == command_list[3]:
         CA = CalculateArea(param['fileName'])
         result = CA.xml_request()
 
     else:
-        result = "The 'command' parameters that we support are 'linear_line_of_sight', " \
-                   "'calculate_cut_fill'"
+        result = "The 'command' parameters that we support are {}".format(command_list)
 
     return jsonify({'command': command, 'result': result})
 
 
-class LinearLineOfSight(object):
+class LinearLineOfSight(SARequest):
 
     def __init__(self, fileName, coord, boundingBox, observerPoint, observerOffset, targetPoint):
         self.fileName = fileName
@@ -51,17 +51,7 @@ class LinearLineOfSight(object):
         self.targetPoint = targetPoint
 
     def xml_request(self):
-
-        url = 'http://localhost:18080/geoserver/wps'
-        headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        try:
-            geo_response = self.analysis(geo_response)
-
-        except:
-            return geo_response
-
-        return geo_response
+        return super().sa_request(self.xml_create, self.analysis)
 
     @staticmethod
     def analysis(geo_response):
@@ -102,18 +92,7 @@ class LinearLineOfSight(object):
 
     def xml_create(self):
 
-        # if not isinstance(self.inputCoverage, list):
-        #     return print('inputCoverage는 list형식으로만 지원합니다.')
-
-        xml = '<?xml version="1.0" encoding="UTF-8"?>' \
-              '<wps:Execute version="1.0.0" service="WPS" '\
-              'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wps/1.0.0" ' \
-              'xmlns:wfs="http://www.opengis.net/wfs" xmlns:wps="http://www.opengis.net/wps/1.0.0" ' \
-              'xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:gml="http://www.opengis.net/gml" ' \
-              'xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" ' \
-              'xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ' \
-              'http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">' \
-              '<ows:Identifier>statistics:LinearLineOfSight</ows:Identifier>' \
+        xml = SARequest.common(0) + '<ows:Identifier>statistics:LinearLineOfSight</ows:Identifier>' \
               '<wps:DataInputs>' \
               '<wps:Input>' \
               '<ows:Identifier>inputCoverage</ows:Identifier>' \
@@ -155,18 +134,12 @@ class LinearLineOfSight(object):
               '</wps:ComplexData>' \
               '</wps:Data>' \
               '</wps:Input>' \
-              '</wps:DataInputs>' \
-              '<wps:ResponseForm>' \
-              '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">'\
-              '<ows:Identifier>result</ows:Identifier>' \
-              '</wps:RawDataOutput>' \
-              '</wps:ResponseForm>' \
-              '</wps:Execute>'
+              '</wps:DataInputs>' + SARequest.common(1)
 
         return xml
 
 
-class CalculateCutFill(object):
+class RasterCutFill(SARequest):
 
     def __init__(self, fileName, coord, boundingBox, inputGeometry, userMeanHeight=-9999):
         self.fileName = fileName
@@ -176,17 +149,7 @@ class CalculateCutFill(object):
         self.userMeanHeight = userMeanHeight
 
     def xml_request(self):
-
-        url = 'http://localhost:18080/geoserver/wps'
-        headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        print(self.xml_create())
-        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        try:
-            geo_response = self.analysis(geo_response)
-
-        except:
-            return geo_response
-        return geo_response
+        return super().sa_request(self.xml_create, self.analysis)
 
     @staticmethod
     def analysis(geo_response):
@@ -256,18 +219,7 @@ class CalculateCutFill(object):
 
     def xml_create(self):
 
-        # if not isinstance(self.inputCoverage, list):
-        #     return print('inputCoverage는 list형식으로만 지원합니다.')
-
-        xml = '<?xml version="1.0" encoding="UTF-8"?>' \
-              '<wps:Execute version="1.0.0" service="WPS" '\
-              'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wps/1.0.0" ' \
-              'xmlns:wfs="http://www.opengis.net/wfs" xmlns:wps="http://www.opengis.net/wps/1.0.0" ' \
-              'xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:gml="http://www.opengis.net/gml" ' \
-              'xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" ' \
-              'xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ' \
-              'http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">' \
-              '<ows:Identifier>statistics:RasterCutFill</ows:Identifier>' \
+        xml = SARequest.common(0) + '<ows:Identifier>statistics:RasterCutFill</ows:Identifier>' \
               '<wps:DataInputs>' \
               '<wps:Input>' \
               '<ows:Identifier>inputCoverage</ows:Identifier>' \
@@ -301,45 +253,29 @@ class CalculateCutFill(object):
               '<wps:LiteralData>' + str(self.userMeanHeight) + '</wps:LiteralData>' \
               '</wps:Data>' \
               '</wps:Input>' \
-              '</wps:DataInputs>' \
-              '<wps:ResponseForm>' \
-              '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">'\
-              '<ows:Identifier>result</ows:Identifier>' \
-              '</wps:RawDataOutput>' \
-              '</wps:ResponseForm>' \
-              '</wps:Execute>'
+              '</wps:DataInputs>' + SARequest.common(1)
 
         return xml
 
 
-class ClipWithGeometry(object):
+class ClipWithGeometry(SARequest):
     def __init__(self, fileName, clipGeometry):
         self.fileName = fileName
         self.clipGeometry = clipGeometry
+
+    def xml_request(self):
+        return super().sa_request(self.xml_create, self.analysis)
 
     @staticmethod
     def analysis(geo_response):
         xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
         iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
 
-        return iter_dict
-
-    def xml_request(self):
-        url = 'http://localhost:18080/geoserver/wps'
-        headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-
-        # try:
-        #     geo_response = self.analysis(geo_response)
-        #
-        # except:
-        #     return geo_response
-
         return geo_response
 
     def xml_create(self):
 
-        xml = '<ows:Identifier>statistics:ClipWithGeometry</ows:Identifier>' \
+        xml = SARequest.common(0) + '<ows:Identifier>statistics:ClipWithGeometry</ows:Identifier>' \
               '<wps:DataInputs>' \
               '<wps:Input>' \
               '<ows:Identifier>inputFeatures</ows:Identifier>' \
@@ -359,14 +295,14 @@ class ClipWithGeometry(object):
               '</wps:ComplexData>' \
               '</wps:Data>' \
               '</wps:Input>' \
-              '</wps:DataInputs>' \
+              '</wps:DataInputs>' + SARequest.common(1)
 
 
-        return xml_create.common(0) + xml + xml_create.common(1)
+        return xml
 
 
 # 아래와 같은 경우는 geoserver에 레이어가 등록되어 있는 것의 면적을 구해주는 것으로 검토 필요.
-class CalculateArea(object):
+class CalculateArea(SARequest):
     def __init__(self, fileName):
         self.fileName = fileName
 
@@ -378,28 +314,11 @@ class CalculateArea(object):
         return iter_dict
 
     def xml_request(self):
-
-        url = 'http://localhost:18080/geoserver/wps'
-        headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        try:
-            geo_response = self.analysis(geo_response)
-
-        except:
-            return geo_response
-        return geo_response
+        return super().sa_request(self.xml_create, self.analysis)
 
     def xml_create(self):
 
-        xml = '<?xml version="1.0" encoding="UTF-8"?>' \
-              '<wps:Execute version="1.0.0" service="WPS" ' \
-              'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wps/1.0.0" ' \
-              'xmlns:wfs="http://www.opengis.net/wfs" xmlns:wps="http://www.opengis.net/wps/1.0.0" ' \
-              'xmlns:ows="http://www.opengis.net/ows/1.1" xmlns:gml="http://www.opengis.net/gml" ' \
-              'xmlns:ogc="http://www.opengis.net/ogc" xmlns:wcs="http://www.opengis.net/wcs/1.1.1" ' \
-              'xmlns:xlink="http://www.w3.org/1999/xlink" xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 ' \
-              'http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">' \
-              '<ows:Identifier>statistics:CalculateArea</ows:Identifier>' \
+        xml = SARequest.common(0) + '<ows:Identifier>statistics:CalculateArea</ows:Identifier>' \
               '<wps:DataInputs>' \
               '<wps:Input>' \
               '<ows:Identifier>inputFeatures</ows:Identifier>' \
@@ -424,15 +343,10 @@ class CalculateArea(object):
               '<wps:LiteralData>Default</wps:LiteralData>' \
               '</wps:Data>' \
               '</wps:Input>' \
-              '</wps:DataInputs>' \
-              '<wps:ResponseForm>' \
-              '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">' \
-              '<ows:Identifier>result</ows:Identifier>' \
-              '</wps:RawDataOutput>' \
-              '</wps:ResponseForm>' \
-              '</wps:Execute>'
+              '</wps:DataInputs>' + SARequest.common(1)
 
         return xml
+
 
 if __name__ == "__main__":
     # data = 'ds:sejong_dem'
@@ -443,4 +357,4 @@ if __name__ == "__main__":
     # targetPoint = [127.29999999999, 36.52222222222]
     #
     # print(LinearLineOfSight(data, coord, inputCoverage, observerPoint, observerOffset, targetPoint).xml_create())
-    pass
+    print('main')
