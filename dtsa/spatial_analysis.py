@@ -348,6 +348,53 @@ class CalculateArea(SARequest):
         return xml
 
 
+# class RasterReclass(SARequest):
+#     def __init__(self, fileName):
+#         self.fileName = fileName
+#
+#     @staticmethod
+#     def analysis(geo_response):
+#         xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
+#         iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
+#
+#         return iter_dict
+#
+#     def xml_request(self):
+#         return super().sa_request(self.xml_create, self.analysis)
+#
+#     def xml_create(self):
+#
+#         xml = SARequest.common(0) + '<ows:Identifier>statistics:RasterReclass</ows:Identifier>' \
+#               '<wps:DataInputs>' \
+#               '<wps:Input>' \
+#               '<ows:Identifier>inputCoverage</ows:Identifier>' \
+#               '<wps:Reference mimeType="image/tiff" ' \
+#               'xlink:href="http://geoserver/wcs" method="POST">' \
+#               '<wps:Body>' \
+#               '<wcs:GetCoverage service="WCS" version="1.1.1">' \
+#               '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
+#               '<wcs:DomainSubset>'\
+#               '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + self.coord + '">'\
+#               '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
+#               '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
+#               '</ows:BoundingBox>' \
+#               '</wcs:DomainSubset>' \
+#               '<wcs:Output format="image/tiff"/>' \
+#               '</wcs:GetCoverage>' \
+#               '</wps:Body>' \
+#               '</wps:Reference>' \
+#               '</wps:Input>' \
+#               '<wps:Input>' \
+#               '<ows:Identifier>ranges</ows:Identifier>' \
+#               '<wps:Data>' \
+#               '<wps:LiteralData>0.0 30.0 1; 30.0 270.0 2; 270.0 365.0 3</wps:LiteralData>' \
+#               '</wps:Data>' \
+#               '</wps:Input>' \
+#               '</wps:DataInputs>' + SARequest.common(1)
+#
+#         return xml
+
+
 if __name__ == "__main__":
     # data = 'ds:sejong_dem'
     # coord = '4326'
