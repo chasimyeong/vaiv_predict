@@ -6,6 +6,8 @@ import requests
 import xmltodict
 import json
 
+from dtsa import xml_create
+
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
 
 
@@ -22,6 +24,10 @@ def api(data):
         CCF = CalculateCutFill(param['fileName'], param['coord'], param['boundingBox'],
                                   param['inputGeometry'], param['userMeanHeight'])
         result = CCF.xml_request()
+
+    elif command == "clip_with_geometry":
+        CWG = ClipWithGeometry(param['fileName'], param['clipGeometry'])
+        result = CWG.xml_request()
 
     elif command == "calculate_area":
         CA = CalculateArea(param['fileName'])
@@ -49,8 +55,11 @@ class LinearLineOfSight(object):
         url = 'http://localhost:18080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
         geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        print(geo_response)
-        geo_response = self.analysis(geo_response)
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except:
+            return geo_response
 
         return geo_response
 
@@ -172,7 +181,11 @@ class CalculateCutFill(object):
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
         print(self.xml_create())
         geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        geo_response = self.analysis(geo_response)
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except:
+            return geo_response
         return geo_response
 
     @staticmethod
@@ -298,24 +311,82 @@ class CalculateCutFill(object):
 
         return xml
 
+
+class ClipWithGeometry(object):
+    def __init__(self, fileName, clipGeometry):
+        self.fileName = fileName
+        self.clipGeometry = clipGeometry
+
+    @staticmethod
+    def analysis(geo_response):
+        xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
+        iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
+
+        return iter_dict
+
+    def xml_request(self):
+        url = 'http://localhost:18080/geoserver/wps'
+        headers = {'Content-Type': 'text/xml;charset=utf-8'}
+        geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
+
+        # try:
+        #     geo_response = self.analysis(geo_response)
+        #
+        # except:
+        #     return geo_response
+
+        return geo_response
+
+    def xml_create(self):
+
+        xml = '<ows:Identifier>statistics:ClipWithGeometry</ows:Identifier>' \
+              '<wps:DataInputs>' \
+              '<wps:Input>' \
+              '<ows:Identifier>inputFeatures</ows:Identifier>' \
+              '<wps:Reference mimeType="text/xml" xlink:href="http://geoserver/wfs" method="POST">' \
+              '<wps:Body>' \
+              '<wfs:GetFeature service="WFS" version="1.0.0" outputFormat="GML2" xmlns:lhdt="lhdt">' \
+              '<wfs:Query typeName="' + self.fileName + '"/>' \
+              '</wfs:GetFeature>' \
+              '</wps:Body>' \
+              '</wps:Reference>' \
+              '</wps:Input>' \
+              '<wps:Input>' \
+              '<ows:Identifier>clipGeometry</ows:Identifier>' \
+              '<wps:Data>' \
+              '<wps:ComplexData mimeType="application/wkt">' \
+              '<![CDATA[MULTIPOLYGON(((' + str(self.clipGeometry) + ')))]]>' \
+              '</wps:ComplexData>' \
+              '</wps:Data>' \
+              '</wps:Input>' \
+              '</wps:DataInputs>' \
+
+
+        return xml_create.common(0) + xml + xml_create.common(1)
+
+
+# 아래와 같은 경우는 geoserver에 레이어가 등록되어 있는 것의 면적을 구해주는 것으로 검토 필요.
 class CalculateArea(object):
     def __init__(self, fileName):
         self.fileName = fileName
 
     @staticmethod
-    #내일 이부분 만들고 테스트 해보기
-    #그전에 geoserver layer 등록해야됨
-    #적당한 shape?을 찾아야할듯 이전에 했던거 잘 기억해서 해보자구~
     def analysis(geo_response):
-        final = []
-        return final
+        xml_dict = json.loads(json.dumps(xmltodict.parse(geo_response)))
+        iter_dict = xml_dict['wfs:FeatureCollection']['gml:featureMember']
+
+        return iter_dict
 
     def xml_request(self):
 
         url = 'http://localhost:18080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
         geo_response = requests.post(url, data=self.xml_create(), headers=headers).text
-        geo_response = self.analysis(geo_response)
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except:
+            return geo_response
         return geo_response
 
     def xml_create(self):
@@ -336,7 +407,7 @@ class CalculateArea(object):
               'xlink:href="http://geoserver/wfs" method="POST">' \
               '<wps:Body>' \
               '<wfs:GetFeature service="WFS" version="1.0.0" outputFormat="GML2" xmlns:lhdt="lhdt">' \
-              '<wfs:Query typeName=' + self.fileName + '/>' \
+              '<wfs:Query typeName="' + self.fileName + '"/>' \
               '</wfs:GetFeature>' \
               '</wps:Body>' \
               '</wps:Reference>' \
@@ -347,6 +418,7 @@ class CalculateArea(object):
               '<wps:LiteralData>Default</wps:LiteralData>' \
               '</wps:Data>' \
               '</wps:Input>' \
+              '<wps:Input>' \
               '<ows:Identifier>areaUnit</ows:Identifier>' \
               '<wps:Data>' \
               '<wps:LiteralData>Default</wps:LiteralData>' \
@@ -363,11 +435,12 @@ class CalculateArea(object):
         return xml
 
 if __name__ == "__main__":
-    data = 'ds:sejong_dem'
-    coord = '4326'
-    inputCoverage = [122.99986111111112, 32.999861111111116,132.0001388888889, 44.00013888888889]
-    observerPoint = [127.2222222222, 36.499999999999]
-    observerOffset = 1.8
-    targetPoint = [127.29999999999, 36.52222222222]
-
-    print(LinearLineOfSight(data, coord, inputCoverage, observerPoint, observerOffset, targetPoint).xml_create())
+    # data = 'ds:sejong_dem'
+    # coord = '4326'
+    # inputCoverage = [122.99986111111112, 32.999861111111116,132.0001388888889, 44.00013888888889]
+    # observerPoint = [127.2222222222, 36.499999999999]
+    # observerOffset = 1.8
+    # targetPoint = [127.29999999999, 36.52222222222]
+    #
+    # print(LinearLineOfSight(data, coord, inputCoverage, observerPoint, observerOffset, targetPoint).xml_create())
+    pass
