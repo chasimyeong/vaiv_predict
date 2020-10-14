@@ -21,11 +21,10 @@ from dtai import dtnn
 from dtai.dtnn import Models
 
 
-
 class Config(object):
 
     def __init__(self, img, data):
-        self.img = img
+        self.img = img.getlist('images')
         self.data = data
         self.command = data.get('command')
         self.img_format = data.get('format')
@@ -78,7 +77,7 @@ class Config(object):
 class SkylineDetection(object):
 
     def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1):
-        self.img = Image.open(img_file)
+        self.img = Image.open(img_file[0])
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
@@ -107,7 +106,8 @@ class SkylineDetection(object):
 class ViewShieldingRate(object):
 
     def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1):
-        self.img = Image.open(img_file)
+        print(img_file)
+        self.img = Image.open(img_file[0])
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
@@ -222,7 +222,9 @@ class ViewShieldingRate(object):
 class FindDifference(object):
 
     def __init__(self, img_file, color='[0, 0, 0]', alpha=0.8):
-        imgs = img_file.getlist('images')
+        # imgs = img_file.getlist('images')
+        print(img_file)
+        imgs = img_file
         #추후 png인지 아닌지에 따라 다르게 처리하도록 할 것
         self.before_img = np.array(Image.open(imgs[0]).convert('RGB'))
         self.after_img = np.array(Image.open(imgs[1]).convert('RGB'))
