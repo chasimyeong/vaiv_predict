@@ -24,11 +24,18 @@ warnings.filterwarnings('ignore')
 app = Flask(__name__)
 CORS(app)
 
+physical_devices = tf.config.list_physical_devices('GPU')
+try:
+    tf.config.experimental.set_memory_growth(physical_devices[0], True)
+except:
+    print('Invalid device or cannot modify virtual devices once initialized.')
+
+dtai_model = Models()
+dtai_model.load()
 
 @app.route('/')
 def security():
     return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
-
 
 # @app.route('/predict', methods=['GET', 'POST'])
 # def predict():
@@ -57,8 +64,6 @@ def landscape():
     if request.method == 'POST':
         # input image
         imgs = request.files
-        print(request.files)
-        print(request.files['images'])
         # parameter
         data = request.form
         # response = process.api(img, data)
@@ -93,12 +98,4 @@ def spatial_analysis():
 
 
 if __name__ == "__main__":
-    physical_devices = tf.config.list_physical_devices('GPU')
-    try:
-        tf.config.experimental.set_memory_growth(physical_devices[0], True)
-    except:
-        print('Invalid device or cannot modify virtual devices once initialized.')
-
-    dtai_model = Models()
-    dtai_model.load()
     app.run(host='0.0.0.0')

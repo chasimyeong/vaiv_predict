@@ -38,27 +38,28 @@ class Config(object):
 
     def __command_check(self):
 
-        if self.command == 'skyline_detection':
+        command_list = ["skyline_detection", "view_shielding_rate", "find_difference"]
+
+        if self.command == command_list[0]:
             params = ['threshold', 'color', 'thickness']
             parameter_dict = self.__get_parameter(params)
             sld = SkylineDetection(self.img, **parameter_dict)
             output = sld.predict()
 
-        elif self.command == 'view_shielding_rate':
+        elif self.command == command_list[1]:
             params = ['threshold', 'color', 'thickness']
             parameter_dict = self.__get_parameter(params)
             vsr = ViewShieldingRate(self.img, **parameter_dict)
             output = vsr.predict()
 
-        elif self.command == 'find_difference':
+        elif self.command == command_list[2]:
             params = ['color', 'alpha']
             parameter_dict = self.__get_parameter(params)
             fd = FindDifference(self.img, **parameter_dict)
             output = fd.result()
 
         else:
-            self.command = "The 'command' parameters that we support are 'skyline_detection', " \
-                      "'view_shielding_rate'"
+            self.command = "The 'command' parameters that we support are {}".format(command_list)
 
             return jsonify({'Error': self.command})
 
@@ -106,7 +107,6 @@ class SkylineDetection(object):
 class ViewShieldingRate(object):
 
     def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1):
-        print(img_file)
         self.img = Image.open(img_file[0])
         self.threshold = threshold
         self.color = color

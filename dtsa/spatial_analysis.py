@@ -1,3 +1,4 @@
+# coding: utf-8
 
 from flask import jsonify
 
@@ -297,7 +298,7 @@ class ClipWithGeometry(SARequest):
               '</wps:Input>' \
               '</wps:DataInputs>' + SARequest.common(1)
 
-
+        print(xml)
         return xml
 
 
