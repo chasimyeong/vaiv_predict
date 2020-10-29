@@ -84,7 +84,8 @@ def spatial_analysis():
         if content_type == 'application/json':
 
             data = request.json
-            response = sa.api(data)
+            dtsa = sa.Config(data)
+            response = dtsa.api()
 
         else:
             error = 'Error : Request MIME type can only be application/json'

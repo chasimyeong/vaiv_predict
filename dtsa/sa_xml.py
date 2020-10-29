@@ -1,22 +1,51 @@
 # coding: utf-8
 import requests
 
+import base64
+from io import BytesIO
+from PIL import Image
+import numpy as np
+
 
 class SARequest(object):
 
     @staticmethod
     def sa_request(created_xml, parsing_xml):
-
         url = 'http://localhost:18080/geoserver/wps'
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
         geo_response = requests.post(url, data=created_xml(), headers=headers).text
-
         try:
             geo_response = parsing_xml(geo_response)
-        except:
+        except Exception as e:
+            print('Except :', e)
             return geo_response
 
         return geo_response
+
+    # @staticmethod
+    # def sa_request_image(created_xml, parsing_xml):
+    #     url = 'http://localhost:18080/geoserver/wps'
+    #     headers = {'Content-Type': 'text/xml;charset=utf-8'}
+    #     geo_response = requests.post(url, data=created_xml(), headers=headers)
+    #     # print(np.unique(np.array(Image.open(BytesIO(geo_response)))))
+    #     # def array2base64(test):
+    #     #     raw_bytes = BytesIO()
+    #     #     img_buffer = Image.fromarray(test.astype('uint8'))
+    #     #     img_buffer.save(raw_bytes, 'PNG')
+    #     #     raw_bytes.seek(0)
+    #     #     base64_img = base64.b64encode(raw_bytes.read())
+    #     #     output_img = base64_img.decode('utf-8')
+    #     #     return output_img
+    #     #
+    #     # geo_response = array2base64(geo_response)
+    #     geo_response = geo_response.content
+    #     try:
+    #         geo_response = parsing_xml(geo_response)
+    #     except Exception as e:
+    #         print('Except :', e)
+    #         return geo_response
+    #
+    #     return geo_response
 
     @staticmethod
     def common(bool):

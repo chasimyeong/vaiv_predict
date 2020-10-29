@@ -7,6 +7,8 @@ import cv2
 
 import ast
 
+import json
+
 from PIL import ImageColor
 from PIL import Image
 
@@ -20,12 +22,12 @@ from dtai import utils
 from dtai import dtnn
 from dtai.dtnn import Models
 
-
+# Maintain dictionary types a consistent structure, if you can
 class Config(object):
 
     def __init__(self, img, data):
         self.img = img.getlist('images')
-        self.data = data
+        self.data = json.loads(data.get('parameters'))
         self.command = data.get('command')
         self.img_format = data.get('format')
 
@@ -41,34 +43,34 @@ class Config(object):
         command_list = ["skyline_detection", "view_shielding_rate", "find_difference"]
 
         if self.command == command_list[0]:
-            params = ['threshold', 'color', 'thickness']
-            parameter_dict = self.__get_parameter(params)
+            parameter_list = ['threshold', 'color', 'thickness']
+            parameter_dict = self.__get_parameter(parameter_list)
             sld = SkylineDetection(self.img, **parameter_dict)
             output = sld.predict()
 
         elif self.command == command_list[1]:
-            params = ['threshold', 'color', 'thickness']
-            parameter_dict = self.__get_parameter(params)
+            parameter_list = ['threshold', 'color', 'thickness']
+            parameter_dict = self.__get_parameter(parameter_list)
             vsr = ViewShieldingRate(self.img, **parameter_dict)
             output = vsr.predict()
 
         elif self.command == command_list[2]:
-            params = ['color', 'alpha']
-            parameter_dict = self.__get_parameter(params)
+            parameter_list = ['color', 'alpha']
+            parameter_dict = self.__get_parameter(parameter_list)
             fd = FindDifference(self.img, **parameter_dict)
             output = fd.result()
 
         else:
-            self.command = "The 'command' parameters that we support are {}".format(command_list)
+            output = "The 'command' parameters that we support are {}".format(command_list)
 
-            return jsonify({'Error': self.command})
+            return jsonify({'command': self.command, 'result': output})
 
         return output
 
-    def __get_parameter(self, parameter):
+    def __get_parameter(self, parameter_list):
 
         parameter_dict = dict()
-        for p in parameter:
+        for p in parameter_list:
             if p in self.data:
                 parameter_dict[p] = self.data[p]
 

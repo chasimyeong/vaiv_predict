@@ -14,7 +14,7 @@ a = Analysis(['server.py'],
                      ("models", "models/"),
                      ("models/weights", "models/weights/")
                      ],
-             hiddenimports=["tensorflow.python.keras.engine.base_layer_v1"],
+             hiddenimports=["tensorflow.python.keras.engine.base_layer_v1", "tensorflow.python.ops.numpy_ops"],
              hookspath=[],
              runtime_hooks=[],
              excludes=[],
