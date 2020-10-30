@@ -9,7 +9,9 @@ import xmltodict
 import json
 
 from dtsa.sa_xml import SARequest
-
+from dtsa.sa_xml import element_execute, identifier, xml_elements, raster_input, element_input, element_response_form
+from dtsa import config
+from xml.etree.ElementTree import Element, SubElement, ElementTree, dump, fromstring, tostring
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
 # Maintain dictionary types a consistent structure, if you can
 
@@ -28,10 +30,12 @@ class Config(object):
 
     def __command_check(self):
 
-        command_list = ["linear_line_of_sight", "raster_cut_fill", "clip_with_geometry",
-                        "calculate_area", "raster_to_image", "statistics_grid_coverage"]
+        cl = config.COMMAND_LIST
 
-        if self.command == command_list[0]:
+        # command_list = ["linear_line_of_sight", "raster_cut_fill", "clip_with_geometry",
+        #                 "calculate_area", "raster_to_image", "statistics_grid_coverage"]
+
+        if self.command == cl[0]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'observerPoint', 'observerOffset', 'targetPoint']
             parameter_dict = self.__get_parameter(parameter_list)
             # LLOS = LinearLineOfSight(param['fileName'], param['coord'], param['boundingBox'],
@@ -39,7 +43,7 @@ class Config(object):
             LLOS = LinearLineOfSight(**parameter_dict)
             output = LLOS.xml_request()
 
-        elif self.command == command_list[1]:
+        elif self.command == cl[1]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'inputGeometry', 'userMeanHeight']
             parameter_dict = self.__get_parameter(parameter_list)
             # RCF = RasterCutFill(param['fileName'], param['coord'], param['boundingBox'],
@@ -47,28 +51,28 @@ class Config(object):
             RCF = RasterCutFill(**parameter_dict)
             output = RCF.xml_request()
 
-        elif self.command == command_list[2]:
+        elif self.command == cl[2]:
             parameter_list = ['fileName', 'clipGeometry']
             parameter_dict = self.__get_parameter(parameter_list)
             # CWG = ClipWithGeometry(param['fileName'], param['clipGeometry'])
             CWG = ClipWithGeometry(**parameter_dict)
             output = CWG.xml_request()
 
-        elif self.command == command_list[3]:
+        elif self.command == cl[3]:
             parameter_list = ['fileName']
             parameter_dict = self.__get_parameter(parameter_list)
             # CA = CalculateArea(param['fileName'])
             CA = CalculateArea(**parameter_dict)
             output = CA.xml_request()
 
-        elif self.command == command_list[4]:
+        elif self.command == cl[4]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'width', 'height']
             parameter_dict = self.__get_parameter(parameter_list)
             # RTI = RasterToImage(param['fileName'], param['coord'], param['boundingBox'], param['width'], param['height'])
             RTI = RasterToImage(**parameter_dict)
             output = RTI.xml_request()
 
-        elif self.command == command_list[5]:
+        elif self.command == cl[5]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'cropShape']
             parameter_dict = self.__get_parameter(parameter_list)
             # SGC = StatisticGridCoverage(param['fileName'], param['coord'], param['boundingBox'])
@@ -76,7 +80,14 @@ class Config(object):
             output = SGC.xml_request()
 
         else:
-            output = "The 'command' parameters that we support are {}".format(command_list)
+            cl_str = ''
+            for i, s in enumerate(cl):
+                cl_str += s
+                if len(cl) == i+1:
+                    continue
+                cl_str += ', '
+
+            output = "The 'command' parameters that we support are '{}'".format(cl_str)
 
         return output
 
@@ -90,18 +101,18 @@ class Config(object):
         return parameter_dict
 
 
-class LinearLineOfSight(SARequest):
+class LinearLineOfSight(object):
 
     def __init__(self, fileName, coord, boundingBox, observerPoint, targetPoint, observerOffset=0):
         self.fileName = fileName
-        self.coord = coord
+        self.coord = int(coord)
         self.boundingBox = boundingBox
         self.observerPoint = observerPoint
-        self.observerOffset = observerOffset
+        self.observerOffset = str(observerOffset)
         self.targetPoint = targetPoint
 
     def xml_request(self):
-        return super().sa_request(self.xml_create, self.analysis)
+        return SARequest.sa_request(self.xml_create, self.analysis)
 
     @staticmethod
     def analysis(geo_response):
@@ -142,51 +153,83 @@ class LinearLineOfSight(SARequest):
 
     def xml_create(self):
 
-        xml = SARequest.common(0) + '<ows:Identifier>statistics:LinearLineOfSight</ows:Identifier>' \
-              '<wps:DataInputs>' \
-              '<wps:Input>' \
-              '<ows:Identifier>inputCoverage</ows:Identifier>' \
-              '<wps:Reference mimeType="image/tiff" ' \
-              'xlink:href="http://geoserver/wcs" method="POST">' \
-              '<wps:Body>' \
-              '<wcs:GetCoverage service="WCS" version="1.1.1">' \
-              '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
-              '<wcs:DomainSubset>'\
-              '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
-              '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
-              '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
-              '</ows:BoundingBox>' \
-              '</wcs:DomainSubset>' \
-              '<wcs:Output format="image/tiff"/>' \
-              '</wcs:GetCoverage>' \
-              '</wps:Body>' \
-              '</wps:Reference>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>observerPoint</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:ComplexData mimeType="application/wkt">' \
-              '<![CDATA[POINT(' + str(self.observerPoint[0]) + ' ' + str(self.observerPoint[1]) + ')]]>' \
-              '</wps:ComplexData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>observerOffset</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:LiteralData>' + str(self.observerOffset) + '</wps:LiteralData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>targetPoint</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:ComplexData mimeType="application/wkt">' \
-              '<![CDATA[POINT(' + str(self.targetPoint[0]) + ' ' + str(self.targetPoint[1]) + ')]]>' \
-              '</wps:ComplexData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '</wps:DataInputs>' + SARequest.common(1)
+        execute = element_execute()
 
-        return xml
+        identifier(execute, 'statistics:LinearLineOfSight')
+        # xml_elements(execute, 'ows:Identifier', text='statistics:LinearLineOfSight')
+        data_inputs = xml_elements(execute, 'wps:DataInputs')
+
+        # bounding_boxes = [122.99986111111112, 32.999861111111116, 132.0001388888889, 44.00013888888889]
+        raster_input(data_inputs, self.fileName, self.coord, self.boundingBox)
+
+        ob_complex_dict = {'mimeType': 'application/wkt'}
+        ob_point_dict = {'child': 'wps:ComplexData', 'attribute': ob_complex_dict,
+                         'text': 'POINT({} {})'.format(self.observerPoint[0], self.observerPoint[1])}
+        element_input(data_inputs, 'observerPoint', ob_point_dict)
+
+        ob_offset_dict = {'child': 'wps:LiteralData', 'text': '{}'.format(self.observerOffset)}
+        element_input(data_inputs, 'observerOffset', ob_offset_dict)
+
+        tg_complex_dict = {'mimeType': 'application/wkt'}
+        tg_point_dict = {'child': 'wps:ComplexData', 'attribute': tg_complex_dict,
+                         'text': 'POINT({} {})'.format(self.targetPoint[0], self.targetPoint[1])}
+        element_input(data_inputs, 'targetPoint', tg_point_dict)
+
+        rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
+        element_response_form(execute, rdo_dict)
+
+        # indent(execute)
+        # dump(execute)
+
+        return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
+
+    # def xml_create(self):
+    #
+    #     xml = SARequest.common(0) + '<ows:Identifier>statistics:LinearLineOfSight</ows:Identifier>' \
+    #           '<wps:DataInputs>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>inputCoverage</ows:Identifier>' \
+    #           '<wps:Reference mimeType="image/tiff" ' \
+    #           'xlink:href="http://geoserver/wcs" method="POST">' \
+    #           '<wps:Body>' \
+    #           '<wcs:GetCoverage service="WCS" version="1.1.1">' \
+    #           '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
+    #           '<wcs:DomainSubset>'\
+    #           '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
+    #           '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
+    #           '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
+    #           '</ows:BoundingBox>' \
+    #           '</wcs:DomainSubset>' \
+    #           '<wcs:Output format="image/tiff"/>' \
+    #           '</wcs:GetCoverage>' \
+    #           '</wps:Body>' \
+    #           '</wps:Reference>' \
+    #           '</wps:Input>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>observerPoint</ows:Identifier>' \
+    #           '<wps:Data>' \
+    #           '<wps:ComplexData mimeType="application/wkt">' \
+    #           '<![CDATA[POINT(' + str(self.observerPoint[0]) + ' ' + str(self.observerPoint[1]) + ')]]>' \
+    #           '</wps:ComplexData>' \
+    #           '</wps:Data>' \
+    #           '</wps:Input>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>observerOffset</ows:Identifier>' \
+    #           '<wps:Data>' \
+    #           '<wps:LiteralData>' + str(self.observerOffset) + '</wps:LiteralData>' \
+    #           '</wps:Data>' \
+    #           '</wps:Input>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>targetPoint</ows:Identifier>' \
+    #           '<wps:Data>' \
+    #           '<wps:ComplexData mimeType="application/wkt">' \
+    #           '<![CDATA[POINT(' + str(self.targetPoint[0]) + ' ' + str(self.targetPoint[1]) + ')]]>' \
+    #           '</wps:ComplexData>' \
+    #           '</wps:Data>' \
+    #           '</wps:Input>' \
+    #           '</wps:DataInputs>' + SARequest.common(1)
+    #
+    #     return xml
 
 
 class RasterCutFill(SARequest):
