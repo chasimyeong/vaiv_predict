@@ -8,6 +8,7 @@ import numpy as np
 
 from xml.etree.ElementTree import Element, SubElement, ElementTree, dump, fromstring, tostring
 
+from dtsa import config
 
 # debugging
 def indent(elem, level=0):
@@ -155,6 +156,90 @@ def xml_elements(parent, child, attribute=None, text=None):
 
     return c
 
+
+class SARequest(object):
+
+    @staticmethod
+    def sa_request(created_xml):
+        url = config.GEOSERVER_WPS_URL
+        headers = {'Content-Type': 'text/xml;charset=utf-8'}
+        geo_response = requests.post(url, data=created_xml(), headers=headers)
+
+        return geo_response
+
+    @staticmethod
+    def wcs_describe_request(coverage):
+        # http://127.0.0.1:18080/geoserver/wcs?service=WCS&VERSION=1.1.1&request=DescribeCoverage&identifiers=lhdt:srtm_korea_dem
+        url = config.GEOSERVER_WCS_URL
+        service = 'wcs'
+        version = '1.1.1'
+        request_name = 'DescribeCoverage'
+        raster_name = coverage
+        params = {'service': service,
+                  'version': version,
+                  'request': request_name,
+                  'identifiers': raster_name}
+        # get_url = url + '?service=wcs&version=1.1.1&request=DescribeCoverage&identifiers=' + raster_name
+        describe_response = requests.get(url, params=params)
+
+        return describe_response
+
+    @staticmethod
+    def wfs_describe_request(coverage):
+        # http://127.0.0.1:18080/geoserver/wcs?service=WCS&VERSION=1.1.1&request=DescribeCoverage&identifiers=lhdt:srtm_korea_dem
+        url = config.GEOSERVER_WCS_URL
+        raster_name = coverage
+        get_url = url + '?service=wcs&version=1.1.1&request=DescribeCoverage&identifiers=' + raster_name
+        describe_response = requests.get(get_url)
+
+        return describe_response
+
+    # 곧 지워질 거임
+    @staticmethod
+    def common(bool):
+        if not bool:
+            header = '<?xml version="1.0" encoding="UTF-8"?>' \
+                  '<wps:Execute version="1.0.0" service="WPS" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' \
+                  'xmlns="http://www.opengis.net/wps/1.0.0" xmlns:wfs="http://www.opengis.net/wfs" ' \
+                  'xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" ' \
+                  'xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" ' \
+                  'xmlns:wcs="http://www.opengis.net/wcs/1.1.1" xmlns:xlink="http://www.w3.org/1999/xlink" ' \
+                  'xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">'
+        else:
+            header = '<wps:ResponseForm>' \
+                  '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">' \
+                  '<ows:Identifier>result</ows:Identifier>' \
+                  '</wps:RawDataOutput>' \
+                  '</wps:ResponseForm>' \
+                  '</wps:Execute>'
+
+        return header
+
+
+class SAParsing(object):
+    @staticmethod
+    def wcs_describe_parsing(geo_response):
+        # bounding box와 좌표 추출
+        note = fromstring(geo_response)
+
+        ns = {'wcs': 'http://www.opengis.net/wcs/1.1.1',
+              'ows': 'http://www.opengis.net/ows/1.1'}
+
+        bounding_element = [c for c in
+                            note.findall('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]/*',
+                                         ns)]
+        coord = note.find('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]', ns).attrib['crs'][
+                -4:]
+
+        bounding_box = []
+        for b in bounding_element:
+            y, x = b.text.split(' ')
+            bounding_box.append(x)
+            bounding_box.append(y)
+
+        return coord, bounding_box
+
+
 class SARequest(object):
 
     @staticmethod
@@ -170,6 +255,7 @@ class SARequest(object):
 
         return geo_response
 
+    # tiff -> image로 변환할때 사용, 아직 뭐가 문제가 있어서 사용하지 못함(다른걸로 대체하여 삭제될 수도 있음)
     # @staticmethod
     # def sa_request_image(created_xml, parsing_xml):
     #     url = 'http://localhost:18080/geoserver/wps'
@@ -195,102 +281,20 @@ class SARequest(object):
     #
     #     return geo_response
 
-    # @staticmethod
-    # def common(bool):
-    #     header = '<?xml version="1.0" encoding="UTF-8"?>' \
-    #               '<wps:Execute version="1.0.0" service="WPS" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' \
-    #               'xmlns="http://www.opengis.net/wps/1.0.0" xmlns:wfs="http://www.opengis.net/wfs" ' \
-    #               'xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" ' \
-    #               'xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" ' \
-    #               'xmlns:wcs="http://www.opengis.net/wcs/1.1.1" xmlns:xlink="http://www.w3.org/1999/xlink" ' \
-    #               'xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">'
-    #
-    #     version = ['1.0.0', '1.1.1']
-    #     service = ['WPS', 'WCS', 'WFS']
-    #
-    #     xmlns_xsi = "http://www.w3.org/2001/XMLSchema-instance"
-    #     xmlns = "http://www.opengis.net/wps/1.0.0"
-    #     xmlns_wfs = "http://www.opengis.net/wfs"
-    #     xmlns_wps = "http://www.opengis.net/wps/1.0.0"
-    #     xmlns_ows = "http://www.opengis.net/ows/1.1"
-    #     xmlns_gml = "http://www.opengis.net/gml"
-    #     xmlns_ogc = "http://www.opengis.net/ogc"
-    #     xmlns_wcs = "http://www.opengis.net/wcs/1.1.1"
-    #     xmlns_xlink = "http://www.w3.org/1999/xlink"
-    #     xsi_schemaLocation = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd"
-    #
-    #     execute = Element('wps:Execute')
-    #     execute.attrib['version'] = version[0]
-    #     execute.attrib['service'] = service[0]
-    #     execute.attrib['xmlns:xsi'] = xmlns_xsi
-    #     execute.attrib['xmlns'] = xmlns
-    #     execute.attrib['xmlns:wfs'] = xmlns_wfs
-    #     execute.attrib['xmlns:wps'] = xmlns_wps
-    #     execute.attrib['xmlns:ows'] = xmlns_ows
-    #     execute.attrib['xmlns:gml'] = xmlns_gml
-    #     execute.attrib['xmlns:ogc'] = xmlns_ogc
-    #     execute.attrib['xmlns:wcs'] = xmlns_wcs
-    #     execute.attrib['xmlns:xlink'] = xmlns_xlink
-    #     execute.attrib['xsi:schemaLocation'] = xsi_schemaLocation
-    #
-    #     SubElement(execute, 'ows:Identifier').text = 'statistics:LinearLineOfSight'
-    #
-    #     data_inputs = Element('wps:DataInputs')
-    #     execute.append(data_inputs)
-    #
-    #     input = Element('wps:Input')
-    #     data_inputs.append(input)
-    #
-    #     SubElement(execute, 'ows:Identifier').text = 'inputCoverage'
-    #
-    #     reference = Element('wps:Reference')
-    #     reference.attrib['mimeType'] = 'image/tiff'
-    #     reference.attrib['xlink:href'] = 'http://geoserver/wcs'
-    #     reference.attrib['method'] = 'POST'
-    #     input.append(input)
-    #
-    #     body = Element('wps:Body')
-    #     reference.append(body)
-    #
-    #     get_coverage = Element('wcs:GetCoverage')
-    #     get_coverage.attrib['service'] = service[1]
-    #     get_coverage.attrib['version'] = version[1]
-    #     body.append(get_coverage)
-    #
-    #
-    #     indent(execute)
-    #     dump(execute)
-    #
-    #     return header
-
-    # @staticmethod
-    # def identifier(element, text):
-    #     itf = Element(element)
-    #     itf.text = text
-    #
-    #     return itf
-
-
-    @staticmethod
-    def common(bool):
-        if not bool:
-            header = '<?xml version="1.0" encoding="UTF-8"?>' \
-                  '<wps:Execute version="1.0.0" service="WPS" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' \
-                  'xmlns="http://www.opengis.net/wps/1.0.0" xmlns:wfs="http://www.opengis.net/wfs" ' \
-                  'xmlns:wps="http://www.opengis.net/wps/1.0.0" xmlns:ows="http://www.opengis.net/ows/1.1" ' \
-                  'xmlns:gml="http://www.opengis.net/gml" xmlns:ogc="http://www.opengis.net/ogc" ' \
-                  'xmlns:wcs="http://www.opengis.net/wcs/1.1.1" xmlns:xlink="http://www.w3.org/1999/xlink" ' \
-                  'xsi:schemaLocation="http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd">'
-        else:
-            header = '<wps:ResponseForm>' \
-                  '<wps:RawDataOutput mimeType="application/vnd.geo+json; subtype=wfs-collection/1.0">' \
-                  '<ows:Identifier>result</ows:Identifier>' \
-                  '</wps:RawDataOutput>' \
-                  '</wps:ResponseForm>' \
-                  '</wps:Execute>'
-
-        return header
-
+import xmltodict
 
 if __name__ == '__main__':
-    print(temp_created_xml())
+    geo_response = temp_SARequest.wcs_describe_request('lhdt:srtm_korea_dem').text
+    note = fromstring(geo_response)
+    ns = {'wcs': 'http://www.opengis.net/wcs/1.1.1',
+          'ows': 'http://www.opengis.net/ows/1.1'}
+
+    bounding_element = [c for c in note.findall('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]/*', ns)]
+    coord = note.find('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]', ns).attrib['crs'][-4:]
+
+    bounding_box = []
+    for b in bounding_element:
+        y, x = b.text.split(' ')
+        bounding_box.append(x)
+        bounding_box.append(y)
+        print(bounding_box)

@@ -1,3 +1,5 @@
+from dtsa import config
+
 def get_parameter(parameter_list, parameters):
     parameter_dict = dict()
     for p in parameter_list:

@@ -8,7 +8,7 @@ from io import BytesIO
 import xmltodict
 import json
 
-from dtsa.sa_xml import SARequest
+from dtsa.sa_xml import SARequest, SAParsing
 from dtsa.sa_xml import element_execute, identifier, xml_elements, raster_input, element_input, element_response_form
 from dtsa import config
 from xml.etree.ElementTree import Element, SubElement, ElementTree, dump, fromstring, tostring
@@ -105,16 +105,40 @@ class Config(object):
 
 class LinearLineOfSight(object):
 
-    def __init__(self, fileName, coord, boundingBox, observerPoint, targetPoint, observerOffset=0):
+    def __init__(self, fileName, observerPoint, targetPoint, coord=None, boundingBox=None, observerOffset=0):
         self.fileName = fileName
-        self.coord = int(coord)
-        self.boundingBox = boundingBox
         self.observerPoint = observerPoint
         self.observerOffset = str(observerOffset)
         self.targetPoint = targetPoint
 
+        if (not coord) or (not boundingBox):
+            geo_response = SARequest.wcs_describe_request(fileName)
+
+            if not coord:
+                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+
+            if not boundingBox:
+                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+
+        self.coord = int(coord)
+        self.boundingBox = boundingBox
+
+
     def xml_request(self):
-        return SARequest.sa_request(self.xml_create, self.analysis)
+
+        geo_response = SARequest.sa_request(self.xml_create()).text
+
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except Exception as e:
+            print('Except :', e)
+
+        return geo_response
+
+    # def xml_request(self):
+    #
+    #     return SARequest.sa_request(self.xml_create, self.analysis)
 
     @staticmethod
     def analysis(geo_response):
@@ -236,15 +260,33 @@ class LinearLineOfSight(object):
 
 class RasterCutFill(SARequest):
 
-    def __init__(self, fileName, coord, boundingBox, inputGeometry, userMeanHeight=-9999):
+    def __init__(self, fileName, inputGeometry, coord=None, boundingBox=None, userMeanHeight=-9999):
         self.fileName = fileName
-        self.coord = coord
-        self.boundingBox = boundingBox
         self.inputGeometry = inputGeometry
         self.userMeanHeight = userMeanHeight
 
+        if (not coord) or (not boundingBox):
+            geo_response = SARequest.wcs_describe_request(fileName)
+
+            if not coord:
+                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+
+            if not boundingBox:
+                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+
+        self.coord = int(coord)
+        self.boundingBox = boundingBox
+
     def xml_request(self):
-        return super().sa_request(self.xml_create, self.analysis)
+        geo_response = SARequest.sa_request(self.xml_create()).text
+
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except Exception as e:
+            print('Except :', e)
+
+        return geo_response
 
     @staticmethod
     def analysis(geo_response):
@@ -316,6 +358,37 @@ class RasterCutFill(SARequest):
 
         return final_list
 
+    # def xml_create(self):
+    #
+    #     execute = element_execute()
+    #
+    #     identifier(execute, 'statistics:RasterCutFill')
+    #     data_inputs = xml_elements(execute, 'wps:DataInputs')
+    #
+    #     # bounding_boxes = [122.99986111111112, 32.999861111111116, 132.0001388888889, 44.00013888888889]
+    #     raster_input(data_inputs, self.fileName, self.coord, self.boundingBox)
+    #
+    #     ob_complex_dict = {'mimeType': 'application/wkt'}
+    #     ob_point_dict = {'child': 'wps:ComplexData', 'attribute': ob_complex_dict,
+    #                      'text': 'POINT({} {})'.format(self.observerPoint[0], self.observerPoint[1])}
+    #     element_input(data_inputs, 'observerPoint', ob_point_dict)
+    #
+    #     ob_offset_dict = {'child': 'wps:LiteralData', 'text': '{}'.format(self.observerOffset)}
+    #     element_input(data_inputs, 'observerOffset', ob_offset_dict)
+    #
+    #     tg_complex_dict = {'mimeType': 'application/wkt'}
+    #     tg_point_dict = {'child': 'wps:ComplexData', 'attribute': tg_complex_dict,
+    #                      'text': 'POINT({} {})'.format(self.targetPoint[0], self.targetPoint[1])}
+    #     element_input(data_inputs, 'targetPoint', tg_point_dict)
+    #
+    #     rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
+    #     element_response_form(execute, rdo_dict)
+    #
+    #     # indent(execute)
+    #     # dump(execute)
+    #
+    #     return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
+
     def xml_create(self):
 
         xml = SARequest.common(0) + '<ows:Identifier>statistics:RasterCutFill</ows:Identifier>' \
@@ -328,7 +401,7 @@ class RasterCutFill(SARequest):
               '<wcs:GetCoverage service="WCS" version="1.1.1">' \
               '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
               '<wcs:DomainSubset>'\
-              '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + self.coord + '">'\
+              '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
               '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
               '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
               '</ows:BoundingBox>' \
@@ -363,7 +436,15 @@ class ClipWithGeometry(SARequest):
         self.clipGeometry = clipGeometry
 
     def xml_request(self):
-        return super().sa_request(self.xml_create, self.analysis)
+        geo_response = SARequest.sa_request(self.xml_create()).text
+
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except Exception as e:
+            print('Except :', e)
+
+        return geo_response
 
     @staticmethod
     def analysis(geo_response):
@@ -412,7 +493,15 @@ class CalculateArea(SARequest):
         return iter_dict
 
     def xml_request(self):
-        return super().sa_request(self.xml_create, self.analysis)
+        geo_response = SARequest.sa_request(self.xml_create()).text
+
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except Exception as e:
+            print('Except :', e)
+
+        return geo_response
 
     def xml_create(self):
 
@@ -449,12 +538,22 @@ class CalculateArea(SARequest):
 # Hold for a while
 class RasterToImage(SARequest):
 
-    def __init__(self, fileName, coord, boundingBox, width=256, height=256):
+    def __init__(self, fileName, coord= None, boundingBox=None, width=256, height=256):
         self.fileName = fileName
-        self.coord = coord
-        self.boundingBox = boundingBox
         self.width = width
         self.height = height
+
+        if (not coord) or (not boundingBox):
+            geo_response = SARequest.wcs_describe_request(fileName)
+
+            if not coord:
+                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+
+            if not boundingBox:
+                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+
+        self.coord = int(coord)
+        self.boundingBox = boundingBox
 
     @staticmethod
     def analysis(geo_response):
@@ -464,7 +563,16 @@ class RasterToImage(SARequest):
         return output
 
     def xml_request(self):
-        return super().sa_request_image(self.xml_create, self.analysis)
+
+        geo_response = SARequest.sa_request(self.xml_create()).text
+
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except Exception as e:
+            print('Except :', e)
+
+        return geo_response
 
     def xml_create(self):
 
@@ -510,11 +618,23 @@ class RasterToImage(SARequest):
 
 class StatisticsGridCoverage(SARequest):
 
-    def __init__(self, fileName, coord, boundingBox, cropShape):
+    def __init__(self, fileName, cropShape, coord=None, boundingBox=None):
         self.fileName = fileName
         self.coord = coord
         self.boundingBox = boundingBox
         self.cropShape = cropShape
+
+        if (not coord) or (not boundingBox):
+            geo_response = SARequest.wcs_describe_request(fileName)
+
+            if not coord:
+                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+
+            if not boundingBox:
+                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+
+        self.coord = int(coord)
+        self.boundingBox = boundingBox
 
     @staticmethod
     def analysis(geo_response):
@@ -524,7 +644,15 @@ class StatisticsGridCoverage(SARequest):
         return iter_dict
 
     def xml_request(self):
-        return super().sa_request(self.xml_create, self.analysis)
+        geo_response = SARequest.sa_request(self.xml_create()).text
+
+        try:
+            geo_response = self.analysis(geo_response)
+
+        except Exception as e:
+            print('Except :', e)
+
+        return geo_response
 
 
     def xml_create(self):
