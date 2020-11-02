@@ -616,16 +616,15 @@ class RasterToImage(SARequest):
         return xml
 
 
-class StatisticsGridCoverage(SARequest):
+class StatisticsGridCoverage(object):
 
-    def __init__(self, fileName, cropShape, coord=None, boundingBox=None):
+    def __init__(self, fileName, cropShape=None, coord=None, boundingBox=None):
         self.fileName = fileName
-        self.coord = coord
-        self.boundingBox = boundingBox
         self.cropShape = cropShape
 
         if (not coord) or (not boundingBox):
-            geo_response = SARequest.wcs_describe_request(fileName)
+
+            geo_response = SARequest.wcs_describe_request(fileName).text
 
             if not coord:
                 coord = SAParsing.wcs_describe_parsing(geo_response)[0]
@@ -633,7 +632,7 @@ class StatisticsGridCoverage(SARequest):
             if not boundingBox:
                 boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
 
-        self.coord = int(coord)
+        self.coord = coord
         self.boundingBox = boundingBox
 
     @staticmethod
@@ -654,44 +653,66 @@ class StatisticsGridCoverage(SARequest):
 
         return geo_response
 
-
     def xml_create(self):
+        execute = element_execute()
+        identifier(execute, 'statistics:StatisticsGridCoverage')
+        data_inputs = xml_elements(execute, 'wps:DataInputs')
+        raster_input(data_inputs, self.fileName, self.coord, self.boundingBox)
 
-        xml = SARequest.common(0) + '<ows:Identifier>statistics:StatisticsGridCoverage</ows:Identifier>' \
-              '<wps:DataInputs>' \
-              '<wps:Input>' \
-              '<ows:Identifier>inputCoverage</ows:Identifier>' \
-              '<wps:Reference mimeType="image/tiff" xlink:href="http://geoserver/wcs" method="POST">' \
-              '<wps:Body>' \
-              '<wcs:GetCoverage service="WCS" version="1.1.1">' \
-              '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
-              '<wcs:DomainSubset>'\
-              '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
-              '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
-              '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
-              '</ows:BoundingBox>' \
-              '</wcs:DomainSubset>' \
-              '<wcs:Output format="image/tiff"/>' \
-              '</wcs:GetCoverage>' \
-              '</wps:Body>' \
-              '</wps:Reference>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>cropShape</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:ComplexData mimeType="application/wkt">' \
-              '<![CDATA[POLYGON((' + str(self.cropShape) + '))]]></wps:ComplexData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '</wps:DataInputs>' \
-              '<wps:ResponseForm>' \
-              '<wps:RawDataOutput mimeType="text/xml">' \
-              '<ows:Identifier>result</ows:Identifier>' \
-              '</wps:RawDataOutput>' \
-              '</wps:ResponseForm>' \
-              '</wps:Execute>'
+        if self.cropShape:
 
-        return xml
+            os_complex_dict = {'mimeType': 'application/wkt'}
+            os_polygon_dict = {'child': 'wps:ComplexData', 'attribute': os_complex_dict,
+                             'text': 'POLYGON(({}))'.format(self.cropShape)}
+            element_input(data_inputs, 'cropShape', os_polygon_dict)
+
+        rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
+        element_response_form(execute, rdo_dict)
+
+        # indent(execute)
+        # dump(execute)
+
+        return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
+
+
+
+    # def xml_create(self):
+    #
+    #     xml = SARequest.common(0) + '<ows:Identifier>statistics:StatisticsGridCoverage</ows:Identifier>' \
+    #           '<wps:DataInputs>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>inputCoverage</ows:Identifier>' \
+    #           '<wps:Reference mimeType="image/tiff" xlink:href="http://geoserver/wcs" method="POST">' \
+    #           '<wps:Body>' \
+    #           '<wcs:GetCoverage service="WCS" version="1.1.1">' \
+    #           '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
+    #           '<wcs:DomainSubset>'\
+    #           '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
+    #           '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
+    #           '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
+    #           '</ows:BoundingBox>' \
+    #           '</wcs:DomainSubset>' \
+    #           '<wcs:Output format="image/tiff"/>' \
+    #           '</wcs:GetCoverage>' \
+    #           '</wps:Body>' \
+    #           '</wps:Reference>' \
+    #           '</wps:Input>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>cropShape</ows:Identifier>' \
+    #           '<wps:Data>' \
+    #           '<wps:ComplexData mimeType="application/wkt">' \
+    #           '<![CDATA[POLYGON((' + str(self.cropShape) + '))]]></wps:ComplexData>' \
+    #           '</wps:Data>' \
+    #           '</wps:Input>' \
+    #           '</wps:DataInputs>' \
+    #           '<wps:ResponseForm>' \
+    #           '<wps:RawDataOutput mimeType="text/xml">' \
+    #           '<ows:Identifier>result</ows:Identifier>' \
+    #           '</wps:RawDataOutput>' \
+    #           '</wps:ResponseForm>' \
+    #           '</wps:Execute>'
+    #
+    #     return xml
 
     # def xml_create(self):
     #

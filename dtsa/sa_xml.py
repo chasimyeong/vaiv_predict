@@ -98,7 +98,8 @@ def element_execute():
 
     return execute
 
-def raster_input(data_inputs, file_name, crs=None, bounding_boxes=None):
+
+def raster_input(data_inputs, file_name, crs, bounding_boxes):
     #data_inputs은 고정값일 수 있음
     e_input = xml_elements(data_inputs, 'wps:Input')
     identifier(e_input, 'inputCoverage')
@@ -110,12 +111,11 @@ def raster_input(data_inputs, file_name, crs=None, bounding_boxes=None):
     identifier(get_coverage, file_name)
     # xml_elements(get_coverage, 'ows:Identifier', text='fileName')
 
-    if crs:
+    if (not crs) and (not bounding_boxes):
+        pass
+    else:
         domain_subset = xml_elements(get_coverage, 'wcs:DomainSubset')
-        if isinstance(crs, str):
-            bounding_dict = {'crs': crs}
-        else:
-            bounding_dict = {'crs': 'http://www.opengis.net/gml/srs/epsg.xml#{}'.format(str(crs))}
+        bounding_dict = {'crs': 'http://www.opengis.net/gml/srs/epsg.xml#{}'.format(str(crs))}
         bounding_box = xml_elements(domain_subset, 'ows:BoundingBox', attribute=bounding_dict)
         xml_elements(bounding_box, 'ows:LowerCorner', text='{} {}'.format(bounding_boxes[0], bounding_boxes[1]))
         xml_elements(bounding_box, 'ows:UpperCorner', text='{} {}'.format(bounding_boxes[2], bounding_boxes[3]))
@@ -123,8 +123,7 @@ def raster_input(data_inputs, file_name, crs=None, bounding_boxes=None):
     output_dict = {'format': 'image/tiff'}
     xml_elements(get_coverage, 'wcs:Output', attribute=output_dict)
 
-# def singular_node(parent, child, text):
-#     SubElement(parent, child).text = text
+
 def identifier(parent, text):
     xml_elements(parent, 'ows:Identifier', text=text)
 
@@ -163,8 +162,8 @@ class SARequest(object):
     def sa_request(created_xml):
         url = config.GEOSERVER_WPS_URL
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data=created_xml(), headers=headers)
-
+        print(created_xml)
+        geo_response = requests.post(url, data=created_xml, headers=headers)
         return geo_response
 
     @staticmethod
@@ -240,20 +239,20 @@ class SAParsing(object):
         return coord, bounding_box
 
 
-class SARequest(object):
-
-    @staticmethod
-    def sa_request(created_xml, parsing_xml):
-        url = 'http://localhost:18080/geoserver/wps'
-        headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        geo_response = requests.post(url, data=created_xml(), headers=headers).text
-        try:
-            geo_response = parsing_xml(geo_response)
-        except Exception as e:
-            print('Except :', e)
-            return geo_response
-
-        return geo_response
+# class SARequest(object):
+#
+#     @staticmethod
+#     def sa_request(created_xml, parsing_xml):
+#         url = 'http://localhost:18080/geoserver/wps'
+#         headers = {'Content-Type': 'text/xml;charset=utf-8'}
+#         geo_response = requests.post(url, data=created_xml(), headers=headers).text
+#         try:
+#             geo_response = parsing_xml(geo_response)
+#         except Exception as e:
+#             print('Except :', e)
+#             return geo_response
+#
+#         return geo_response
 
     # tiff -> image로 변환할때 사용, 아직 뭐가 문제가 있어서 사용하지 못함(다른걸로 대체하여 삭제될 수도 있음)
     # @staticmethod
@@ -284,7 +283,7 @@ class SARequest(object):
 import xmltodict
 
 if __name__ == '__main__':
-    geo_response = temp_SARequest.wcs_describe_request('lhdt:srtm_korea_dem').text
+    geo_response = SARequest.wcs_describe_request('lhdt:srtm_korea_dem').text
     note = fromstring(geo_response)
     ns = {'wcs': 'http://www.opengis.net/wcs/1.1.1',
           'ows': 'http://www.opengis.net/ows/1.1'}
