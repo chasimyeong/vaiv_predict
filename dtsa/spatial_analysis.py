@@ -12,10 +12,12 @@ from dtsa.sa_xml import SARequest
 from dtsa.sa_xml import element_execute, identifier, xml_elements, raster_input, element_input, element_response_form
 from dtsa import config
 from xml.etree.ElementTree import Element, SubElement, ElementTree, dump, fromstring, tostring
+
+from common.utils import get_parameter
+
+
 # xml같은 경우 띄어쓰기나 이런 사소한 것으로 parsing error가 발생할 수도 있음
 # Maintain dictionary types a consistent structure, if you can
-
-
 class Config(object):
 
     def __init__(self, data):
@@ -24,11 +26,11 @@ class Config(object):
 
     def api(self):
 
-        result = self.__command_check()
+        result = self.__command()
 
         return jsonify({'command': self.command, 'result': result})
 
-    def __command_check(self):
+    def __command(self):
 
         cl = config.COMMAND_LIST
 
@@ -37,7 +39,7 @@ class Config(object):
 
         if self.command == cl[0]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'observerPoint', 'observerOffset', 'targetPoint']
-            parameter_dict = self.__get_parameter(parameter_list)
+            parameter_dict = get_parameter(parameter_list, self.params)
             # LLOS = LinearLineOfSight(param['fileName'], param['coord'], param['boundingBox'],
             #                             param['observerPoint'], param['observerOffset'], param['targetPoint'])
             LLOS = LinearLineOfSight(**parameter_dict)
@@ -45,7 +47,7 @@ class Config(object):
 
         elif self.command == cl[1]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'inputGeometry', 'userMeanHeight']
-            parameter_dict = self.__get_parameter(parameter_list)
+            parameter_dict = get_parameter(parameter_list, self.params)
             # RCF = RasterCutFill(param['fileName'], param['coord'], param['boundingBox'],
             #                           param['inputGeometry'], param['userMeanHeight'])
             RCF = RasterCutFill(**parameter_dict)
@@ -53,28 +55,28 @@ class Config(object):
 
         elif self.command == cl[2]:
             parameter_list = ['fileName', 'clipGeometry']
-            parameter_dict = self.__get_parameter(parameter_list)
+            parameter_dict = get_parameter(parameter_list, self.params)
             # CWG = ClipWithGeometry(param['fileName'], param['clipGeometry'])
             CWG = ClipWithGeometry(**parameter_dict)
             output = CWG.xml_request()
 
         elif self.command == cl[3]:
             parameter_list = ['fileName']
-            parameter_dict = self.__get_parameter(parameter_list)
+            parameter_dict = get_parameter(parameter_list, self.params)
             # CA = CalculateArea(param['fileName'])
             CA = CalculateArea(**parameter_dict)
             output = CA.xml_request()
 
         elif self.command == cl[4]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'width', 'height']
-            parameter_dict = self.__get_parameter(parameter_list)
+            parameter_dict = get_parameter(parameter_list, self.params)
             # RTI = RasterToImage(param['fileName'], param['coord'], param['boundingBox'], param['width'], param['height'])
             RTI = RasterToImage(**parameter_dict)
             output = RTI.xml_request()
 
         elif self.command == cl[5]:
             parameter_list = ['fileName', 'coord', 'boundingBox', 'cropShape']
-            parameter_dict = self.__get_parameter(parameter_list)
+            parameter_dict = get_parameter(parameter_list, self.params)
             # SGC = StatisticGridCoverage(param['fileName'], param['coord'], param['boundingBox'])
             SGC = StatisticsGridCoverage(**parameter_dict)
             output = SGC.xml_request()
@@ -91,14 +93,14 @@ class Config(object):
 
         return output
 
-    def __get_parameter(self, parameter_list):
-
-        parameter_dict = dict()
-        for p in parameter_list:
-            if p in self.params:
-                parameter_dict[p] = self.params[p]
-
-        return parameter_dict
+    # def __get_parameter(self, parameter_list):
+    #
+    #     parameter_dict = dict()
+    #     for p in parameter_list:
+    #         if p in self.params:
+    #             parameter_dict[p] = self.params[p]
+    #
+    #     return parameter_dict
 
 
 class LinearLineOfSight(object):
