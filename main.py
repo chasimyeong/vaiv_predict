@@ -24,7 +24,6 @@ warnings.filterwarnings('ignore')
 app = Flask(__name__)
 CORS(app)
 
-#test2
 physical_devices = tf.config.list_physical_devices('GPU')
 try:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
@@ -64,7 +63,7 @@ def spatial_analysis():
         if content_type == 'application/json':
 
             data = request.json
-            dtsa = sa.Config(data)
+            dtsa = sa.ResponseConfig(data)
             response = dtsa.api()
 
         else:

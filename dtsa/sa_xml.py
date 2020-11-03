@@ -111,14 +111,20 @@ def raster_input(data_inputs, file_name, crs, bounding_boxes):
     identifier(get_coverage, file_name)
     # xml_elements(get_coverage, 'ows:Identifier', text='fileName')
 
-    if (not crs) and (not bounding_boxes):
-        pass
-    else:
-        domain_subset = xml_elements(get_coverage, 'wcs:DomainSubset')
-        bounding_dict = {'crs': 'http://www.opengis.net/gml/srs/epsg.xml#{}'.format(str(crs))}
-        bounding_box = xml_elements(domain_subset, 'ows:BoundingBox', attribute=bounding_dict)
-        xml_elements(bounding_box, 'ows:LowerCorner', text='{} {}'.format(bounding_boxes[0], bounding_boxes[1]))
-        xml_elements(bounding_box, 'ows:UpperCorner', text='{} {}'.format(bounding_boxes[2], bounding_boxes[3]))
+    domain_subset = xml_elements(get_coverage, 'wcs:DomainSubset')
+    bounding_dict = {'crs': 'http://www.opengis.net/gml/srs/epsg.xml#{}'.format(crs)}
+    bounding_box = xml_elements(domain_subset, 'ows:BoundingBox', attribute=bounding_dict)
+    xml_elements(bounding_box, 'ows:LowerCorner', text='{} {}'.format(bounding_boxes[0], bounding_boxes[1]))
+    xml_elements(bounding_box, 'ows:UpperCorner', text='{} {}'.format(bounding_boxes[2], bounding_boxes[3]))
+
+    # if (not crs) and (not bounding_boxes):
+    #     pass
+    # else:
+    #     domain_subset = xml_elements(get_coverage, 'wcs:DomainSubset')
+    #     bounding_dict = {'crs': 'http://www.opengis.net/gml/srs/epsg.xml#{}'.format(crs)}
+    #     bounding_box = xml_elements(domain_subset, 'ows:BoundingBox', attribute=bounding_dict)
+    #     xml_elements(bounding_box, 'ows:LowerCorner', text='{} {}'.format(bounding_boxes[0], bounding_boxes[1]))
+    #     xml_elements(bounding_box, 'ows:UpperCorner', text='{} {}'.format(bounding_boxes[2], bounding_boxes[3]))
 
     output_dict = {'format': 'image/tiff'}
     xml_elements(get_coverage, 'wcs:Output', attribute=output_dict)
