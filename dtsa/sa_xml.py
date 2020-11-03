@@ -162,7 +162,6 @@ class SARequest(object):
     def sa_request(created_xml):
         url = config.GEOSERVER_WPS_URL
         headers = {'Content-Type': 'text/xml;charset=utf-8'}
-        print(created_xml)
         geo_response = requests.post(url, data=created_xml, headers=headers)
         return geo_response
 

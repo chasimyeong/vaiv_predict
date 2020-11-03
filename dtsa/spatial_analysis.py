@@ -46,7 +46,7 @@ class Config(object):
             output = LLOS.xml_request()
 
         elif self.command == cl[1]:
-            parameter_list = ['fileName', 'coord', 'boundingBox', 'inputGeometry', 'userMeanHeight']
+            parameter_list = ['fileName', 'coord', 'boundingBox', 'cropShape', 'baseHeight']
             parameter_dict = get_parameter(parameter_list, self.params)
             # RCF = RasterCutFill(param['fileName'], param['coord'], param['boundingBox'],
             #                           param['inputGeometry'], param['userMeanHeight'])
@@ -112,15 +112,17 @@ class LinearLineOfSight(object):
         self.targetPoint = targetPoint
 
         if (not coord) or (not boundingBox):
-            geo_response = SARequest.wcs_describe_request(fileName)
+
+            geo_response = SARequest.wcs_describe_request(fileName).text
+            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
 
             if not coord:
-                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+                coord = coord_boundingBox[0]
 
             if not boundingBox:
-                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+                boundingBox = coord_boundingBox[1]
 
-        self.coord = int(coord)
+        self.coord = coord
         self.boundingBox = boundingBox
 
 
@@ -260,21 +262,23 @@ class LinearLineOfSight(object):
 
 class RasterCutFill(SARequest):
 
-    def __init__(self, fileName, inputGeometry, coord=None, boundingBox=None, userMeanHeight=-9999):
+    def __init__(self, fileName, cropShape, coord=None, boundingBox=None, baseHeight=-9999):
         self.fileName = fileName
-        self.inputGeometry = inputGeometry
-        self.userMeanHeight = userMeanHeight
+        self.cropShape = cropShape
+        self.baseHeight = baseHeight
 
         if (not coord) or (not boundingBox):
-            geo_response = SARequest.wcs_describe_request(fileName)
+
+            geo_response = SARequest.wcs_describe_request(fileName).text
+            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
 
             if not coord:
-                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+                coord = coord_boundingBox[0]
 
             if not boundingBox:
-                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+                boundingBox = coord_boundingBox[1]
 
-        self.coord = int(coord)
+        self.coord = coord
         self.boundingBox = boundingBox
 
     def xml_request(self):
@@ -306,7 +310,6 @@ class RasterCutFill(SARequest):
                         temp_list = []
                         for p in polygon[k]:
                             temp_list.append(p['gml:LinearRing']['gml:coordinates'].split())
-
 
                     else:
                         temp_list = [polygon[k]['gml:LinearRing']['gml:coordinates'].split()]
@@ -358,76 +361,63 @@ class RasterCutFill(SARequest):
 
         return final_list
 
-    # def xml_create(self):
-    #
-    #     execute = element_execute()
-    #
-    #     identifier(execute, 'statistics:RasterCutFill')
-    #     data_inputs = xml_elements(execute, 'wps:DataInputs')
-    #
-    #     # bounding_boxes = [122.99986111111112, 32.999861111111116, 132.0001388888889, 44.00013888888889]
-    #     raster_input(data_inputs, self.fileName, self.coord, self.boundingBox)
-    #
-    #     ob_complex_dict = {'mimeType': 'application/wkt'}
-    #     ob_point_dict = {'child': 'wps:ComplexData', 'attribute': ob_complex_dict,
-    #                      'text': 'POINT({} {})'.format(self.observerPoint[0], self.observerPoint[1])}
-    #     element_input(data_inputs, 'observerPoint', ob_point_dict)
-    #
-    #     ob_offset_dict = {'child': 'wps:LiteralData', 'text': '{}'.format(self.observerOffset)}
-    #     element_input(data_inputs, 'observerOffset', ob_offset_dict)
-    #
-    #     tg_complex_dict = {'mimeType': 'application/wkt'}
-    #     tg_point_dict = {'child': 'wps:ComplexData', 'attribute': tg_complex_dict,
-    #                      'text': 'POINT({} {})'.format(self.targetPoint[0], self.targetPoint[1])}
-    #     element_input(data_inputs, 'targetPoint', tg_point_dict)
-    #
-    #     rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
-    #     element_response_form(execute, rdo_dict)
-    #
-    #     # indent(execute)
-    #     # dump(execute)
-    #
-    #     return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
-
     def xml_create(self):
 
-        xml = SARequest.common(0) + '<ows:Identifier>statistics:RasterCutFill</ows:Identifier>' \
-              '<wps:DataInputs>' \
-              '<wps:Input>' \
-              '<ows:Identifier>inputCoverage</ows:Identifier>' \
-              '<wps:Reference mimeType="image/tiff" ' \
-              'xlink:href="http://geoserver/wcs" method="POST">' \
-              '<wps:Body>' \
-              '<wcs:GetCoverage service="WCS" version="1.1.1">' \
-              '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
-              '<wcs:DomainSubset>'\
-              '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
-              '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
-              '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
-              '</ows:BoundingBox>' \
-              '</wcs:DomainSubset>' \
-              '<wcs:Output format="image/tiff"/>' \
-              '</wcs:GetCoverage>' \
-              '</wps:Body>' \
-              '</wps:Reference>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>cropShape</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:ComplexData mimeType="application/wkt">' \
-              '<![CDATA[MULTIPOLYGON(((' + str(self.inputGeometry) + ')))]]>' \
-              '</wps:ComplexData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '<wps:Input>' \
-              '<ows:Identifier>baseHeight</ows:Identifier>' \
-              '<wps:Data>' \
-              '<wps:LiteralData>' + str(self.userMeanHeight) + '</wps:LiteralData>' \
-              '</wps:Data>' \
-              '</wps:Input>' \
-              '</wps:DataInputs>' + SARequest.common(1)
+        execute = element_execute()
 
-        return xml
+        identifier(execute, 'statistics:RasterCutFill')
+        data_inputs = xml_elements(execute, 'wps:DataInputs')
+        raster_input(data_inputs, self.fileName, self.coord, self.boundingBox)
+
+        os_complex_dict = {'mimeType': 'application/wkt'}
+        os_polygon_dict = {'child': 'wps:ComplexData', 'attribute': os_complex_dict,
+                             'text': 'POLYGON(({}))'.format(self.cropShape)}
+        element_input(data_inputs, 'cropShape', os_polygon_dict)
+
+        rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
+        element_response_form(execute, rdo_dict)
+
+        return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
+
+    # def xml_create(self):
+    #
+    #     xml = SARequest.common(0) + '<ows:Identifier>statistics:RasterCutFill</ows:Identifier>' \
+    #           '<wps:DataInputs>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>inputCoverage</ows:Identifier>' \
+    #           '<wps:Reference mimeType="image/tiff" ' \
+    #           'xlink:href="http://geoserver/wcs" method="POST">' \
+    #           '<wps:Body>' \
+    #           '<wcs:GetCoverage service="WCS" version="1.1.1">' \
+    #           '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
+    #           '<wcs:DomainSubset>'\
+    #           '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
+    #           '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
+    #           '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
+    #           '</ows:BoundingBox>' \
+    #           '</wcs:DomainSubset>' \
+    #           '<wcs:Output format="image/tiff"/>' \
+    #           '</wcs:GetCoverage>' \
+    #           '</wps:Body>' \
+    #           '</wps:Reference>' \
+    #           '</wps:Input>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>cropShape</ows:Identifier>' \
+    #           '<wps:Data>' \
+    #           '<wps:ComplexData mimeType="application/wkt">' \
+    #           '<![CDATA[MULTIPOLYGON(((' + str(self.cropShape) + ')))]]>' \
+    #           '</wps:ComplexData>' \
+    #           '</wps:Data>' \
+    #           '</wps:Input>' \
+    #           '<wps:Input>' \
+    #           '<ows:Identifier>baseHeight</ows:Identifier>' \
+    #           '<wps:Data>' \
+    #           '<wps:LiteralData>' + str(self.baseHeight) + '</wps:LiteralData>' \
+    #           '</wps:Data>' \
+    #           '</wps:Input>' \
+    #           '</wps:DataInputs>' + SARequest.common(1)
+    #
+    #     return xml
 
 
 class ClipWithGeometry(SARequest):
@@ -544,17 +534,18 @@ class RasterToImage(SARequest):
         self.height = height
 
         if (not coord) or (not boundingBox):
-            geo_response = SARequest.wcs_describe_request(fileName)
+
+            geo_response = SARequest.wcs_describe_request(fileName).text
+            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
 
             if not coord:
-                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+                coord = coord_boundingBox[0]
 
             if not boundingBox:
-                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+                boundingBox = coord_boundingBox[1]
 
-        self.coord = int(coord)
+        self.coord = coord
         self.boundingBox = boundingBox
-
     @staticmethod
     def analysis(geo_response):
         # output = geo_response.decode('utf-8')
@@ -617,6 +608,9 @@ class RasterToImage(SARequest):
 
 
 class StatisticsGridCoverage(object):
+    """
+    fileName만 필수, 나머지는 defualt값을 가져오도록 개발완료
+    """
 
     def __init__(self, fileName, cropShape=None, coord=None, boundingBox=None):
         self.fileName = fileName
@@ -625,12 +619,13 @@ class StatisticsGridCoverage(object):
         if (not coord) or (not boundingBox):
 
             geo_response = SARequest.wcs_describe_request(fileName).text
+            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
 
             if not coord:
-                coord = SAParsing.wcs_describe_parsing(geo_response)[0]
+                coord = coord_boundingBox[0]
 
             if not boundingBox:
-                boundingBox = SAParsing.wcs_describe_parsing(geo_response)[1]
+                boundingBox = coord_boundingBox[1]
 
         self.coord = coord
         self.boundingBox = boundingBox
@@ -668,9 +663,6 @@ class StatisticsGridCoverage(object):
 
         rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
         element_response_form(execute, rdo_dict)
-
-        # indent(execute)
-        # dump(execute)
 
         return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
 
@@ -712,38 +704,6 @@ class StatisticsGridCoverage(object):
     #           '</wps:ResponseForm>' \
     #           '</wps:Execute>'
     #
-    #     return xml
-
-    # def xml_create(self):
-    #
-    #     xml = SARequest.common(0) + '<ows:Identifier>statistics:StatisticsGridCoverage</ows:Identifier>' \
-    #           '<wps:DataInputs>' \
-    #           '<wps:Input>' \
-    #           '<ows:Identifier>inputCoverage</ows:Identifier>' \
-    #           '<wps:Reference mimeType="image/tiff" xlink:href="http://geoserver/wcs" method="POST">' \
-    #           '<wps:Body>' \
-    #           '<wcs:GetCoverage service="WCS" version="1.1.1">' \
-    #           '<ows:Identifier>' + self.fileName + '</ows:Identifier>' \
-    #           '<wcs:DomainSubset>'\
-    #           '<ows:BoundingBox crs="http://www.opengis.net/gml/srs/epsg.xml#' + str(self.coord) + '">'\
-    #           '<ows:LowerCorner>' + str(self.boundingBox[0]) + ' ' + str(self.boundingBox[1]) + '</ows:LowerCorner>' \
-    #           '<ows:UpperCorner>' + str(self.boundingBox[2]) + ' ' + str(self.boundingBox[3]) + '</ows:UpperCorner>' \
-    #           '</ows:BoundingBox>' \
-    #           '</wcs:DomainSubset>' \
-    #           '<wcs:Output format="image/tiff"/>' \
-    #           '</wcs:GetCoverage>' \
-    #           '</wps:Body>' \
-    #           '</wps:Reference>' \
-    #           '</wps:Input>' \
-    #           '</wps:DataInputs>' \
-    #           '<wps:ResponseForm>' \
-    #           '<wps:RawDataOutput mimeType="text/xml">' \
-    #           '<ows:Identifier>result</ows:Identifier>' \
-    #           '</wps:RawDataOutput>' \
-    #           '</wps:ResponseForm>' \
-    #           '</wps:Execute>'
-    #
-    #     print(xml)
     #     return xml
 
 # class RasterReclass(SARequest):
