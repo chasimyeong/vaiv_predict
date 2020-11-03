@@ -37,27 +37,6 @@ dtai_model.load()
 def security():
     return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
 
-# @app.route('/predict', methods=['GET', 'POST'])
-# def predict():
-#
-#     if request.method == 'POST':
-#         # input image
-#
-#         img = request.files['image']
-#
-#         # parameter
-#         data = request.form
-#         # response = process.api(img, data)
-#         dtai = process.Config(img, data)
-#         response = dtai.api()
-#
-#     else:
-#         error = 'Error : Request method is only POST'
-#         response = jsonify({'Error': error})
-#
-#     return response
-
-
 @app.route('/landscape', methods=['GET', 'POST'])
 def landscape():
 
