@@ -21,3 +21,19 @@ geo_port = 18080
 GEOSERVER_WPS_URL = 'http://{}:{}/geoserver/wps'.format(geo_ip, geo_port)
 GEOSERVER_WCS_URL = 'http://{}:{}/geoserver/wcs'.format(geo_ip, geo_port)
 GEOSERVER_WFS_URL = 'http://{}:{}/geoserver/wfs'.format(geo_ip, geo_port)
+
+"""
+geoserver opengis url
+"""
+VERSION = ['1.0.0', '1.1.1']
+SERVICE = ['WPS', 'WCS']
+XMLNS = "http://www.opengis.net/wps/1.0.0"
+XMLNS_XSI = "http://www.w3.org/2001/XMLSchema-instance"
+XMLNS_WFS = "http://www.opengis.net/wfs"
+XMLNS_WPS = "http://www.opengis.net/wps/1.0.0"
+XMLNS_OWS = "http://www.opengis.net/ows/1.1"
+XMLNS_GML = "http://www.opengis.net/gml"
+XMLNS_OGC = "http://www.opengis.net/ogc"
+XMLNS_WCS = "http://www.opengis.net/wcs/1.1.1"
+XMLNS_XLINK = "http://www.w3.org/1999/xlink"
+XSI_SCHEMALOCATION = "http://www.opengis.net/wps/1.0.0 http://schemas.opengis.net/wps/1.0.0/wpsAll.xsd"

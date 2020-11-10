@@ -43,7 +43,7 @@ class Config(object):
         command_list = ["skyline_detection", "view_shielding_rate", "find_difference"]
 
         if self.command == command_list[0]:
-            parameter_list = ['threshold', 'color', 'thickness']
+            parameter_list = ['threshold', 'color', 'thickness', 'pred_type']
             parameter_dict = self.__get_parameter(parameter_list)
             sld = SkylineDetection(self.img, **parameter_dict)
             output = sld.predict()
@@ -79,31 +79,73 @@ class Config(object):
 
 class SkylineDetection(object):
 
-    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1):
+    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1, pred_type='line'):
         self.img = Image.open(img_file[0])
         self.threshold = threshold
         self.color = color
         self.thickness = thickness
-        self.model = Models.models[dtnn.SKYLINE_MODEL]
+        self.pred_type = pred_type
+        if pred_type == 'line':
+            self.model = Models.models[dtnn.SKYLINE_MODEL]
+        else:
+            self.model = Models.models[dtnn.SKYLINE_SEG_MODEL]
 
     def predict(self):
         # pre-processing image
-        input_arr = image_processing.preprocessing(self.img, 'L')
+        if self.pred_type == 'line':
+            input_arr = image_processing.preprocessing(self.img, 'L')
+        else:
+            input_arr = image_processing.preprocessing(self.img, 'RGB')
 
         # prediction output
         predictions = self.model.predict(input_arr)
         prediction = np.array(np.round(predictions[0] * 255, 0), dtype='uint8')
         resize_prediction = cv2.resize(prediction, dsize=(self.img.size[0], self.img.size[1]), interpolation=cv2.INTER_CUBIC)
-        # return {'output_img': resize_prediction}
+
         # after-processing image
         clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
-        ridge = image_processing.y_ridge(clear_pred)
+        if self.pred_type == 'line':
+            ridge = image_processing.y_ridge(clear_pred)
+            # final output
+            resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
+            output_img = image_processing.draw_polyline(resize_img, ridge, self.color, self.thickness)
+        else:
+            ridge = self.contour(clear_pred)
+            # final output
+            resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
+            output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
 
-        # final output
-        resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
-        output_img = image_processing.draw_polyline(resize_img, ridge, self.color, self.thickness)
+        # # final output
+        # resize_img = (np.array(self.img)[:, :, :3]).astype('uint8')
+        # output_img = image_processing.draw_polyline(resize_img, ridge, self.color, self.thickness)
 
         return {'output_img': output_img}
+
+    def contour(self, img_arr):
+        contours, _ = cv2.findContours(img_arr.astype('uint8'), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
+
+        return contours
+
+    def draw_contours(self, img, contour, color=(0, 0, 0), thickness=1):
+
+        # cp = image_processing.ColorPalette(color)
+
+        if isinstance(color, str):
+            if len(color) >= 9:
+                color = ast.literal_eval(color)
+            else:
+                if len(color) == 6:
+                    color = '#' + color
+
+                color = ImageColor.getcolor(color, 'RGB')
+
+        if isinstance(thickness, str):
+            thickness = int(thickness)
+
+        img_copy = img.copy()
+        cv2.drawContours(img_copy, contour, -1, color, thickness, lineType=cv2.LINE_AA)
+
+        return img_copy
 
 
 class ViewShieldingRate(object):
