@@ -79,7 +79,7 @@ class Config(object):
 
 class SkylineDetection(object):
 
-    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1, pred_type='line'):
+    def __init__(self, img_file, threshold=20, color=(0, 0, 0), thickness=1, pred_type='seg'):
         self.img = Image.open(img_file[0])
         self.threshold = threshold
         self.color = color
