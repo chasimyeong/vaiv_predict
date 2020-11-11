@@ -27,6 +27,8 @@ class Config(object):
 
     def __init__(self, img, data):
         self.img = img.getlist('images')
+        print(data.get('parameters'))
+        print(type(data.get('parameters')))
         self.data = json.loads(data.get('parameters'))
         self.command = data.get('command')
         self.img_format = data.get('format')
