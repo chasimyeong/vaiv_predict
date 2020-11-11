@@ -22,14 +22,13 @@ from dtai import utils
 from dtai import dtnn
 from dtai.dtnn import Models
 
+
 # Maintain dictionary types a consistent structure, if you can
 class Config(object):
 
     def __init__(self, img, data):
         self.img = img.getlist('images')
-        print(data.get('parameters'))
-        print(type(data.get('parameters')))
-        self.data = json.loads(data.get('parameters'))
+        self.parameters = json.loads(data.get('parameters'))
         self.command = data.get('command')
         self.img_format = data.get('format')
 
@@ -73,8 +72,8 @@ class Config(object):
 
         parameter_dict = dict()
         for p in parameter_list:
-            if p in self.data:
-                parameter_dict[p] = self.data[p]
+            if p in self.parameters:
+                parameter_dict[p] = self.parameters[p]
 
         return parameter_dict
 

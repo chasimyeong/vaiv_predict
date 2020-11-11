@@ -42,11 +42,14 @@ def landscape():
 
     if request.method == 'POST':
         # input image
+
         imgs = request.files
         # parameter
         data = request.form
         # response = process.api(img, data)
         dtai = process.Config(imgs, data)
+        # print('Request images :', imgs)
+        # print('Request data :', data)
         response = dtai.api()
 
     else:
