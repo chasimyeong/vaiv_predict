@@ -297,6 +297,9 @@ class RasterCutFill(SARequest):
                              'text': 'POLYGON(({}))'.format(self.cropShape)}
         element_input(data_inputs, 'cropShape', os_polygon_dict)
 
+        ob_base_dict = {'child': 'wps:LiteralData', 'text': '{}'.format(self.baseHeight)}
+        element_input(data_inputs, 'baseHeight', ob_base_dict)
+
         rdo_dict = {'mimeType': 'text/xml; subtype=wfs-collection/1.0'}
         element_response_form(execute, rdo_dict)
 

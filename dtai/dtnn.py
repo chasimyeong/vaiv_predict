@@ -39,7 +39,7 @@ class Models(object):
         skyline_weight_path = os.path.join(self.weights_path, 'unet_sl_1024_1_weight_white+existing.hdf5')
         skyline_seg_weight_path = os.path.join(self.weights_path, 'unet_sl_1024_3_weight_white+existing.hdf5')
         # view_shielding_weight_path = os.path.join(self.weights_path, 'unet_vs_1024_1_weight.hdf5')
-        view_shielding_weight_path = os.path.join(self.weights_path, 'unet_vs_include_colorful.hdf5')
+        view_shielding_weight_path = os.path.join(self.weights_path, 'unet_vs_52epoch_0.9141_image+100_2x.hdf5')
 
         # weights load
         skyline_model.load_weights(skyline_weight_path)
@@ -47,12 +47,6 @@ class Models(object):
         view_shielding_model.load_weights(view_shielding_weight_path)
 
         Models.models = [skyline_model, view_shielding_model, skyline_seg_model]
-
-    # def load_models(self):
-    #     json_file = open("model.json", "r")
-    #     loaded_model_json = json_file.read()
-    #     json_file.close()
-    #     loaded_model = model_from_json(loaded_model_json)
 
     @staticmethod
     def __keras_model(model_file):

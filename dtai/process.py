@@ -180,8 +180,8 @@ class ViewShieldingRate(object):
         output_img = self.draw_contours(resize_img, ridge, self.color, self.thickness)
         # output_img = image_processing.draw_polyline(resize_img, ridge, color='BL', thickness=1)
         rate = self.shielding_rate(resize_img, ridge)
-        # return {'output_img': resize_prediction, 'shielding_rate': rate}
-        return {'output_img': output_img, 'shielding_rate': rate}
+        return {'output_img': resize_prediction, 'shielding_rate': rate}
+        # return {'output_img': output_img, 'shielding_rate': rate}
 
     def shielding_rate(self, img, contour):
         x = img.shape[1]
@@ -268,7 +268,6 @@ class FindDifference(object):
 
     def __init__(self, img_file, color='[0, 0, 0]', alpha=0.8):
         # imgs = img_file.getlist('images')
-        print(img_file)
         imgs = img_file
         #추후 png인지 아닌지에 따라 다르게 처리하도록 할 것
         self.before_img = np.array(Image.open(imgs[0]).convert('RGB'))
