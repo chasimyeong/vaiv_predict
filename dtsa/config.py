@@ -1,6 +1,8 @@
 """
 All Spatial-analysis command value
 """
+# Raster info
+WCS_LIST = 'wcs_list'
 # Raster Analysis
 CLIP_WITH_GEOMETRY = 'clip_with_geometry'
 LINEAR_LINE_OF_SIGHT = 'linear_line_of_sight'
@@ -11,7 +13,7 @@ STATISTICS_GRID_COVERAGE = 'statistics_grid_coverage'
 CALCULATE_AREA = 'calculate_area'
 # Spatial analysis command list
 COMMAND_LIST = [LINEAR_LINE_OF_SIGHT, RASTER_CUT_FILL, CLIP_WITH_GEOMETRY, CALCULATE_AREA, RASTER_TO_IMAGE,
-                STATISTICS_GRID_COVERAGE]
+                STATISTICS_GRID_COVERAGE, WCS_LIST]
 
 """
 geoserver request url

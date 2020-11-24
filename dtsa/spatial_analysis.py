@@ -22,7 +22,10 @@ class ResponseConfig(object):
 
     def __init__(self, data):
         self.command = data['command']
-        self.params = data['parameters']
+        try:
+            self.params = data['parameters']
+        except KeyError:
+            print('Call wcs_list')
 
     def api(self):
 
@@ -71,6 +74,11 @@ class ResponseConfig(object):
             SGC = StatisticsGridCoverage(**parameter_dict)
             output = SGC.xml_request()
 
+        elif self.command == cl[6]:
+            WL = WCSList()
+            output = WL.xml_request()
+
+
         else:
             cl_str = ''
             for i, s in enumerate(cl):
@@ -95,7 +103,7 @@ class LinearLineOfSight(object):
         if (not coord) or (not boundingBox):
 
             geo_response = SARequest.wcs_describe_request(fileName).text
-            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
+            coord_boundingBox = SAParsing.wcs_coord_parsing(geo_response)
 
             if not coord:
                 coord = coord_boundingBox[0]
@@ -193,7 +201,7 @@ class RasterCutFill(SARequest):
         if (not coord) or (not boundingBox):
 
             geo_response = SARequest.wcs_describe_request(fileName).text
-            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
+            coord_boundingBox = SAParsing.wcs_coord_parsing(geo_response)
 
             if not coord:
                 coord = coord_boundingBox[0]
@@ -424,7 +432,7 @@ class RasterToImage(object):
         if (not coord) or (not boundingBox):
 
             geo_response = SARequest.wcs_describe_request(fileName).text
-            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
+            coord_boundingBox = SAParsing.wcs_coord_parsing(geo_response)
 
             if not coord:
                 coord = coord_boundingBox[0]
@@ -504,7 +512,7 @@ class StatisticsGridCoverage(object):
         if (not coord) or (not boundingBox):
 
             geo_response = SARequest.wcs_describe_request(fileName).text
-            coord_boundingBox = SAParsing.wcs_describe_parsing(geo_response)
+            coord_boundingBox = SAParsing.wcs_coord_parsing(geo_response)
 
             if not coord:
                 coord = coord_boundingBox[0]
@@ -550,6 +558,13 @@ class StatisticsGridCoverage(object):
         element_response_form(execute, rdo_dict)
 
         return '<?xml version="1.0" encoding="UTF-8"?>' + tostring(execute, encoding='utf-8').decode('utf-8')
+
+
+class WCSList(object):
+
+    def xml_request(self):
+        geo_response = SARequest.wcs_capabilities_request().text
+        return SAParsing.wcs_capabilities_parsing(geo_response)
 
 
 # Hold for a while

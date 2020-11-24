@@ -189,6 +189,20 @@ class SARequest(object):
 
         return describe_response
 
+    @staticmethod
+    def wcs_capabilities_request():
+
+        url = config.GEOSERVER_WCS_URL
+        request_name = 'GetCapabilities'
+
+        params = {'service': config.SERVICE[1],
+                  'version': config.VERSION[1],
+                  'request': request_name}
+
+        capabilities_response = requests.get(url, params=params)
+
+        return capabilities_response
+
     # @staticmethod
     # def wfs_describe_request(coverage):
     #     # http://127.0.0.1:18080/geoserver/wcs?service=WCS&VERSION=1.1.1&request=DescribeCoverage&identifiers=lhdt:srtm_korea_dem
@@ -223,7 +237,7 @@ class SARequest(object):
 
 class SAParsing(object):
     @staticmethod
-    def wcs_describe_parsing(geo_response):
+    def wcs_coord_parsing(geo_response):
         # bounding box와 좌표 추출
         note = fromstring(geo_response)
 
@@ -245,6 +259,22 @@ class SAParsing(object):
             bounding_box.append(y)
 
         return coord, bounding_box
+
+    @staticmethod
+    def wcs_capabilities_parsing(geo_response):
+        note = fromstring(geo_response)
+
+        ns = {'wcs': 'http://www.opengis.net/wcs/1.1.1',
+              'ows': 'http://www.opengis.net/ows/1.1'}
+
+        wcs_list = []
+
+        for cs in note.findall('wcs:Contents/*', ns):
+            i = cs.find('wcs:Identifier', ns).text
+
+            wcs_list.append(i)
+
+        return wcs_list
 
 
 # class SARequest(object):
@@ -291,17 +321,41 @@ class SAParsing(object):
 import xmltodict
 
 if __name__ == '__main__':
+    print(SARequest.wcs_describe_request('lhdt:srtm_korea_dem').url)
     geo_response = SARequest.wcs_describe_request('lhdt:srtm_korea_dem').text
     note = fromstring(geo_response)
+    print(note)
+    # ns = {'wcs': 'http://www.opengis.net/wcs/1.1.1',
+    #       'ows': 'http://www.opengis.net/ows/1.1'}
+    #
+    # bounding_element = [c for c in note.findall('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]/*', ns)]
+    # coord = note.find('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]', ns).attrib['crs'][-4:]
+    #
+    # bounding_box = []
+    # for b in bounding_element:
+    #     y, x = b.text.split(' ')
+    #     bounding_box.append(x)
+    #     bounding_box.append(y)
+    #     print(bounding_box)
+
+    print(SARequest.wcs_capabilities_request().url)
+    geo_response = SARequest.wcs_capabilities_request().text
+    note = fromstring(geo_response)
+
     ns = {'wcs': 'http://www.opengis.net/wcs/1.1.1',
           'ows': 'http://www.opengis.net/ows/1.1'}
 
-    bounding_element = [c for c in note.findall('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]/*', ns)]
-    coord = note.find('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]', ns).attrib['crs'][-4:]
+    for cs in note.findall('wcs:Contents/*', ns):
+        print(cs.find('wcs:Identifier', ns).text)
 
-    bounding_box = []
-    for b in bounding_element:
-        y, x = b.text.split(' ')
-        bounding_box.append(x)
-        bounding_box.append(y)
-        print(bounding_box)
+
+    #
+    # bounding_element = [c for c in note.findall('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]/*', ns)]
+    # coord = note.find('wcs:CoverageDescription/wcs:Domain/wcs:SpatialDomain/ows:BoundingBox[2]', ns).attrib['crs'][-4:]
+    #
+    # bounding_box = []
+    # for b in bounding_element:
+    #     y, x = b.text.split(' ')
+    #     bounding_box.append(x)
+    #     bounding_box.append(y)
+    #     print(bounding_box)
