@@ -12,6 +12,7 @@ from keras.models import model_from_json
 SKYLINE_MODEL = 0
 VIEW_SHIELDING_MODEL = 1
 SKYLINE_SEG_MODEL = 2
+SHADOW_DETECTION = 3
 
 class Models(object):
 
@@ -29,24 +30,28 @@ class Models(object):
         skyline_seg_model_path = os.path.join(self.models_path, 'unet_sl_1024_3_model.json')
         # view_shielding_model_path = os.path.join(self.models_path, 'unet_vs_1024_1_model.json')
         view_shielding_model_path = os.path.join(self.models_path, 'unet_vs_1024_3_model.json')
+        shadow_detection_model_path = os.path.join(self.models_path, 'unet_sd_1024_3_model.json')
 
         # models load
         skyline_model = self.__keras_model(skyline_model_path)
         skyline_seg_model = self.__keras_model(skyline_seg_model_path)
         view_shielding_model = self.__keras_model(view_shielding_model_path)
+        shadow_detection_model = self.__keras_model(shadow_detection_model_path)
 
         # weights_path
         skyline_weight_path = os.path.join(self.weights_path, 'unet_sl_1024_1_weight_white+existing.hdf5')
         skyline_seg_weight_path = os.path.join(self.weights_path, 'unet_sl_1024_3_weight_white+existing.hdf5')
         # view_shielding_weight_path = os.path.join(self.weights_path, 'unet_vs_1024_1_weight.hdf5')
         view_shielding_weight_path = os.path.join(self.weights_path, 'unet_vs_52epoch_0.9141_image+100_2x.hdf5')
+        shadow_detection_weight_path = os.path.join(self.weights_path, 'unet_sd_22epoch_0.9677.hdf5')
 
         # weights load
         skyline_model.load_weights(skyline_weight_path)
         skyline_seg_model.load_weights(skyline_seg_weight_path)
         view_shielding_model.load_weights(view_shielding_weight_path)
+        shadow_detection_model.load_weights(shadow_detection_weight_path)
 
-        Models.models = [skyline_model, view_shielding_model, skyline_seg_model]
+        Models.models = [skyline_model, view_shielding_model, skyline_seg_model, shadow_detection_model]
 
     @staticmethod
     def __keras_model(model_file):

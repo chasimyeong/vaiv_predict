@@ -16,6 +16,7 @@ from flask_cors import CORS
 import tensorflow as tf
 
 from dtai import process
+from dtai import shadow_detection
 from dtai.dtnn import Models
 from dtsa import spatial_analysis as sa
 
@@ -33,10 +34,12 @@ except:
 dtai_model = Models()
 dtai_model.load()
 
+
 @app.route('/')
 def security():
     return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
 
+# To change 'ai' later
 @app.route('/landscape', methods=['GET', 'POST'])
 def landscape():
 
@@ -57,6 +60,25 @@ def landscape():
         response = jsonify({'Error': error})
 
     return response
+
+
+# @app.route('/sunlight', methods=['GET', 'POST'])
+# def sunlight():
+#     if request.method == 'POST':
+#
+#         # input image
+#         imgs = request.files
+#
+#         # parameter
+#         data = request.form
+#         dtai = shadow_detection.Config(imgs, data)
+#         response = dtai.api()
+#
+#     else:
+#         error = 'Error : Request method is only POST'
+#         response = jsonify({'Error': error})
+#
+#     return response
 
 
 @app.route('/spatial-analysis', methods=['GET', 'POST'])
