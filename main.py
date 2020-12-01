@@ -40,7 +40,7 @@ def security():
     return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
 
 
-# To change 'ai' later (reviewing, because 'find_difference' command is not 'ai')
+# Delete later
 @app.route('/landscape', methods=['GET', 'POST'])
 def landscape():
 
@@ -63,23 +63,24 @@ def landscape():
     return response
 
 
-# @app.route('/sunlight', methods=['GET', 'POST'])
-# def sunlight():
-#     if request.method == 'POST':
-#
-#         # input image
-#         imgs = request.files
-#
-#         # parameter
-#         data = request.form
-#         dtai = shadow_detection.Config(imgs, data)
-#         response = dtai.api()
-#
-#     else:
-#         error = 'Error : Request method is only POST'
-#         response = jsonify({'Error': error})
-#
-#     return response
+@app.route('/ai-analysis', methods=['GET', 'POST'])
+def ai_analysis():
+
+    if request.method == 'POST':
+        # input image
+
+        images = request.files
+        # parameter
+        data = request.form
+
+        dtai = process.Config(images, data)
+        response = dtai.api()
+
+    else:
+        error = 'Error : Request method is only POST'
+        response = jsonify({'Error': error})
+
+    return response
 
 
 @app.route('/spatial-analysis', methods=['GET', 'POST'])
@@ -102,6 +103,25 @@ def spatial_analysis():
 
     return response
 
+
+@app.route('/image-analysis', methods=['GET', 'POST'])
+def image_analysis():
+
+    if request.method == 'POST':
+        # input image
+
+        images = request.files
+        # parameter
+        data = request.form
+
+        dtai = process.Config(images, data)
+        response = dtai.api()
+
+    else:
+        error = 'Error : Request method is only POST'
+        response = jsonify({'Error': error})
+
+    return response
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

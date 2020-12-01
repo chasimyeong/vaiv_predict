@@ -83,7 +83,7 @@ class Config(object):
             output = fd.result()
 
         elif self.command == command_list[3]:
-            parameter_list = ['shape_attributes', "threshold"]
+            parameter_list = ['points', "threshold"]
             parameter_dict = self.__get_parameter(parameter_list)
             sd = ShadowDetection(self.images, **parameter_dict)
             output = sd.predict()
@@ -338,9 +338,9 @@ class FindDifference(object):
 
 class ShadowDetection(object):
 
-    def __init__(self, imgs, shape_attributes, threshold=250):
+    def __init__(self, imgs, points, threshold=250):
         self.imgs = [Image.open(i) for i in imgs]
-        self.shape_attributes = [np.array(s) for s in shape_attributes]
+        self.points = [np.array(s) for s in points]
         self.threshold = threshold
         self.model = Models.models[dtnn.SHADOW_DETECTION]
 
@@ -353,7 +353,7 @@ class ShadowDetection(object):
         processing_images = []
         images_area = []
 
-        for img, c in zip(self.imgs, self.shape_attributes):
+        for img, c in zip(self.imgs, self.points):
 
             height = img.size[1]
             width = img.size[0]
@@ -426,7 +426,6 @@ class ShadowDetection(object):
         output['output_rate'] = output_rate
 
         return output
-
 
     def contour(self, img_arr):
         contours, _ = cv2.findContours(img_arr.astype('uint8'), cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_TC89_KCOS)
