@@ -39,7 +39,8 @@ dtai_model.load()
 def security():
     return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
 
-# To change 'ai' later
+
+# To change 'ai' later (reviewing, because 'find_difference' command is not 'ai')
 @app.route('/landscape', methods=['GET', 'POST'])
 def landscape():
 

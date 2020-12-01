@@ -4,31 +4,45 @@ import base64
 from io import BytesIO
 from PIL import Image
 
+import numpy as np
+
 
 class OutputFormat(object):
     def __init__(self, output_img, img_format):
-        self.output_img = output_img
+        if isinstance(output_img, list):
+            self.output_img = output_img
+        elif isinstance(output_img, np.ndarray):
+            self.output_img = [output_img]
+
         self.img_format = img_format
 
     def trans_format(self):
+        trans_output = []
         if self.img_format == 'array':
-            trans_output = self.array2list()
+
+            for i in self.output_img:
+                trans_output.append(self.array2list(i))
 
         elif self.img_format == 'base64':
-            trans_output = self.array2base64()
+
+            for i in self.output_img:
+                trans_output.append(self.array2base64(i))
 
         else:
             trans_output = "The 'format' parameters that we support are 'array', 'base64'"
 
+        if len(trans_output) == 1:
+            trans_output = trans_output[0]
+
         return trans_output
 
-    def array2list(self):
-        output_img = self.output_img.tolist()
+    def array2list(self, before_img):
+        output_img = before_img.tolist()
         return output_img
 
-    def array2base64(self):
+    def array2base64(self, before_img):
         raw_bytes = BytesIO()
-        img_buffer = Image.fromarray(self.output_img.astype('uint8'))
+        img_buffer = Image.fromarray(before_img.astype('uint8'))
         img_buffer.save(raw_bytes, 'PNG')
         raw_bytes.seek(0)
         base64_img = base64.b64encode(raw_bytes.read())

@@ -27,20 +27,36 @@ from dtai.dtnn import Models
 class Config(object):
 
     def __init__(self, images, data):
+        self.data = data
         self.images = images.getlist('images')
         self.parameters = json.loads(data.get('parameters'))
         self.command = data.get('command')
 
-        #Delete later
+        # Delete later
         try:
             self.img_format = data.get('format')
-        except:
-            pass
+        except Exception as e:
+            print(e)
+            self.img_format = False
 
     def api(self):
         result = self.__command_check()
-        # output_format = utils.OutputFormat(result['output_img'], self.img_format)
-        # result['output_img'] = output_format.trans_format()
+
+        if 'output_img' in result:
+
+            """
+            Change to the code below
+            #img_format = self.parameters['format']
+            """
+            if self.img_format:
+                img_format = self.img_format
+            elif 'format' in self.parameters:
+                img_format = self.parameters['format']
+            else:
+                img_format = 'base64'
+
+            output_format = utils.OutputFormat(result['output_img'], img_format)
+            result['output_img'] = output_format.trans_format()
 
         return jsonify({'command': self.command, 'result': result})
 
@@ -53,24 +69,18 @@ class Config(object):
             parameter_dict = self.__get_parameter(parameter_list)
             sld = SkylineDetection(self.images, **parameter_dict)
             output = sld.predict()
-            output_format = utils.OutputFormat(output['output_img'], self.img_format)
-            output['output_img'] = output_format.trans_format()
 
         elif self.command == command_list[1]:
             parameter_list = ['threshold', 'color', 'thickness']
             parameter_dict = self.__get_parameter(parameter_list)
             vsr = ViewShieldingRate(self.images, **parameter_dict)
             output = vsr.predict()
-            output_format = utils.OutputFormat(output['output_img'], self.img_format)
-            output['output_img'] = output_format.trans_format()
 
         elif self.command == command_list[2]:
             parameter_list = ['color', 'alpha']
             parameter_dict = self.__get_parameter(parameter_list)
             fd = FindDifference(self.images, **parameter_dict)
             output = fd.result()
-            output_format = utils.OutputFormat(output['output_img'], self.img_format)
-            output['output_img'] = output_format.trans_format()
 
         elif self.command == command_list[3]:
             parameter_list = ['shape_attributes', "threshold"]
@@ -336,6 +346,8 @@ class ShadowDetection(object):
 
     def predict(self):
 
+        output = {}
+
         # pre-processing image
 
         processing_images = []
@@ -388,8 +400,8 @@ class ShadowDetection(object):
             images_area.append(img_area)
 
         # prediction output
-
         output_rate = []
+        predict_images = []
 
         for w, a in zip(processing_images, images_area):
             w = Image.fromarray(w)
@@ -401,6 +413,7 @@ class ShadowDetection(object):
 
             # after-processing image
             clear_pred = image_processing.clear_img(resize_prediction, self.threshold)
+            predict_images.append(clear_pred)
 
             ct = self.contour(clear_pred)
             shadow_rate = 0
@@ -409,7 +422,10 @@ class ShadowDetection(object):
             rate = round((shadow_rate/a) * 100, 4)
             output_rate.append(rate)
 
-        return {'output_rate': output_rate}
+        output['output_img'] = predict_images
+        output['output_rate'] = output_rate
+
+        return output
 
 
     def contour(self, img_arr):
