@@ -12,15 +12,18 @@ import json
 from PIL import ImageColor
 from PIL import Image
 
-from skimage.measure import compare_ssim
-
 from flask import jsonify
+
+from datetime import datetime
+from pytz import timezone
 
 from dtai import image_processing
 from dtai import utils
 
 from dtai import dtnn
 from dtai.dtnn import Models
+
+from db import postgresql
 
 
 # Maintain dictionary types a consistent structure, if you can
@@ -38,6 +41,16 @@ class Config(object):
         except Exception as e:
             print(e)
             self.img_format = False
+
+        pg = postgresql.POSTGRESQL()
+        date_today = datetime.now(timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
+        query = "INSERT INTO input_data (input_parameters, input_date) VALUES (%s, %s) RETURNING input_id"
+        values = (data.get('parameters'), date_today)
+        pg.execute(query, values)
+        input_id = pg.fetchone()[0]
+        print(input_id)
+        pg.commit()
+        pg.close()
 
     def api(self):
         result = self.__command_check()

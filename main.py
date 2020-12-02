@@ -5,6 +5,7 @@ import warnings
 import os
 import sys
 
+# Setting for execute .exe
 if getattr(sys, 'frozen', False):
     os.chdir(os.path.dirname(sys.executable))
 else:
@@ -15,25 +16,33 @@ from flask_cors import CORS
 
 import tensorflow as tf
 
+from datetime import datetime
+from pytz import timezone
+
 from dtai import process
-from dtai import shadow_detection
 from dtai.dtnn import Models
 from dtsa import spatial_analysis as sa
+
+from db import postgresql
 
 warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app)
 
+# Setting Gpu Memory
 physical_devices = tf.config.list_physical_devices('GPU')
 try:
     tf.config.experimental.set_memory_growth(physical_devices[0], True)
 except:
     print('Invalid device or cannot modify virtual devices once initialized.')
 
+# model load
 dtai_model = Models()
 dtai_model.load()
 
+# db connection
+postgresql.connection_check()
 
 @app.route('/')
 def security():
@@ -67,14 +76,32 @@ def landscape():
 def ai_analysis():
 
     if request.method == 'POST':
-        # input image
 
-        images = request.files
-        # parameter
-        data = request.form
+        try:
 
-        dtai = process.Config(images, data)
-        response = dtai.api()
+
+            # input image
+            images = request.files
+            # parameter
+            data = request.form
+
+            # cur = connection.cursor()
+            #
+            # date_today = datetime.now(timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
+            # print(images)
+            # print(data)
+            # cur.execute(
+            #     """
+            #     INSERT INTO input_data (input_images, input_parameters, input_date) VALUES (%s, %s, %s)
+            #     """, (images, data, date_today))
+            # connection.commit()
+            # cur.close()
+            dtai = process.Config(images, data)
+            response = dtai.api()
+
+        except Exception as error:
+            print(error)
+            response = jsonify({'Error': error})
 
     else:
         error = 'Error : Request method is only POST'
