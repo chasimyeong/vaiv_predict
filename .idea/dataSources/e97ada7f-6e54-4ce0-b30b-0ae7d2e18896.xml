@@ -793,9 +793,14 @@ false posixrules
     <database id="3" parent="1" name="dpredict">
       <ObjectId>35892</ObjectId>
       <Owner>postgres</Owner>
-      <IntrospectionStateNumber>1032895</IntrospectionStateNumber>
+      <IntrospectionStateNumber>1033132</IntrospectionStateNumber>
       <Current>1</Current>
-      <Relations>sequence|table|35953|35955|1
+      <Relations>sequence|table|37578|37580|1
+sequence|table|35994|35996|1
+sequence|table|36035|36037|1
+sequence|table|36065|36067|1
+sequence|table|36075|36077|1
+sequence|table|37588|37590|1
 </Relations>
     </database>
     <database id="4" parent="1" name="postgres">
@@ -856,7 +861,7 @@ false posixrules
       <Comment>standard public schema</Comment>
       <StateNumber>360</StateNumber>
       <Owner>postgres</Owner>
-      <IntrospectionStateNumber>1032896</IntrospectionStateNumber>
+      <IntrospectionStateNumber>1033133</IntrospectionStateNumber>
       <Current>1</Current>
     </schema>
     <access-method id="18" parent="3" name="btree">
@@ -919,74 +924,320 @@ false posixrules
     <language id="26" parent="3" name="internal"/>
     <language id="27" parent="3" name="plpgsql"/>
     <language id="28" parent="3" name="sql"/>
-    <sequence id="29" parent="17" name="input_data_input_id_seq">
-      <ObjectId>35953</ObjectId>
+    <sequence id="29" parent="17" name="access_log_access_id_seq">
+      <ObjectId>36035</ObjectId>
       <Owner>postgres</Owner>
-      <StateNumber>1032890</StateNumber>
+      <StateNumber>1032981</StateNumber>
       <DataType>integer|0s</DataType>
     </sequence>
-    <table id="30" parent="17" name="input_data">
-      <ObjectId>35955</ObjectId>
+    <sequence id="30" parent="17" name="input_ai_data_input_ai_id_seq">
+      <ObjectId>36065</ObjectId>
       <Owner>postgres</Owner>
-      <StateNumber>1032890</StateNumber>
-    </table>
-    <table id="31" parent="17" name="log">
-      <ObjectId>35917</ObjectId>
+      <StateNumber>1033048</StateNumber>
+      <DataType>integer|0s</DataType>
+    </sequence>
+    <sequence id="31" parent="17" name="input_ai_images_input_ai_images_id_seq">
+      <ObjectId>36075</ObjectId>
       <Owner>postgres</Owner>
-      <StateNumber>1032867</StateNumber>
+      <StateNumber>1033050</StateNumber>
+      <DataType>integer|0s</DataType>
+    </sequence>
+    <sequence id="32" parent="17" name="output_ai_data_output_ai_id_seq">
+      <ObjectId>37578</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1033129</StateNumber>
+      <DataType>integer|0s</DataType>
+    </sequence>
+    <sequence id="33" parent="17" name="output_ai_images_output_ai_images_id_seq">
+      <ObjectId>37588</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1033131</StateNumber>
+      <DataType>integer|0s</DataType>
+    </sequence>
+    <sequence id="34" parent="17" name="request_log_request_id_seq">
+      <ObjectId>35994</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1032934</StateNumber>
+      <DataType>integer|0s</DataType>
+    </sequence>
+    <table id="35" parent="17" name="access_log">
+      <ObjectId>36037</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1032981</StateNumber>
     </table>
-    <column id="32" parent="30" name="input_id">
+    <table id="36" parent="17" name="input_ai_data">
+      <ObjectId>36067</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1033048</StateNumber>
+    </table>
+    <table id="37" parent="17" name="input_ai_images">
+      <ObjectId>36077</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1033050</StateNumber>
+    </table>
+    <table id="38" parent="17" name="output_ai_data">
+      <ObjectId>37580</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1033129</StateNumber>
+    </table>
+    <table id="39" parent="17" name="output_ai_images">
+      <ObjectId>37590</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1033131</StateNumber>
+    </table>
+    <table id="40" parent="17" name="request_log">
+      <ObjectId>35996</ObjectId>
+      <Owner>postgres</Owner>
+      <StateNumber>1032934</StateNumber>
+    </table>
+    <column id="41" parent="35" name="access_id">
       <Position>1</Position>
       <DataType>integer|0s</DataType>
       <NotNull>1</NotNull>
-      <StateNumber>1032890</StateNumber>
+      <StateNumber>1032981</StateNumber>
       <TypeId>23</TypeId>
       <IdentityKind>always</IdentityKind>
       <Computed>1</Computed>
     </column>
-    <column id="33" parent="30" name="input_parameters">
+    <column id="42" parent="35" name="access_ip">
       <Position>2</Position>
+      <DataType>varchar|0s</DataType>
+      <StateNumber>1032981</StateNumber>
+      <TypeId>1043</TypeId>
+    </column>
+    <column id="43" parent="35" name="access_method">
+      <Position>3</Position>
+      <DataType>varchar|0s</DataType>
+      <StateNumber>1032981</StateNumber>
+      <TypeId>1043</TypeId>
+    </column>
+    <column id="44" parent="35" name="access_content">
+      <Position>4</Position>
       <DataType>text|0s</DataType>
-      <StateNumber>1032890</StateNumber>
+      <StateNumber>1032981</StateNumber>
       <TypeId>25</TypeId>
     </column>
-    <column id="34" parent="30" name="input_date">
-      <Position>3</Position>
+    <column id="45" parent="35" name="access_date">
+      <Position>5</Position>
       <DataType>timestamp|0s</DataType>
-      <StateNumber>1032890</StateNumber>
+      <StateNumber>1032981</StateNumber>
       <TypeId>1114</TypeId>
     </column>
-    <index id="35" parent="30" name="input_data_pkey">
-      <ObjectId>35961</ObjectId>
-      <StateNumber>1032890</StateNumber>
-      <ColNames>input_id</ColNames>
+    <index id="46" parent="35" name="access_log_pkey">
+      <ObjectId>36043</ObjectId>
+      <StateNumber>1032981</StateNumber>
+      <ColNames>access_id</ColNames>
       <Unique>1</Unique>
       <Primary>1</Primary>
     </index>
-    <key id="36" parent="30" name="input_data_pkey">
-      <ObjectId>35962</ObjectId>
-      <StateNumber>1032890</StateNumber>
-      <ColNames>input_id</ColNames>
+    <key id="47" parent="35" name="access_log_pkey">
+      <ObjectId>36044</ObjectId>
+      <StateNumber>1032981</StateNumber>
+      <ColNames>access_id</ColNames>
       <Primary>1</Primary>
-      <UnderlyingIndexName>input_data_pkey</UnderlyingIndexName>
+      <UnderlyingIndexName>access_log_pkey</UnderlyingIndexName>
     </key>
-    <column id="37" parent="31" name="log_state">
+    <column id="48" parent="36" name="input_ai_id">
       <Position>1</Position>
+      <DataType>integer|0s</DataType>
+      <NotNull>1</NotNull>
+      <StateNumber>1033048</StateNumber>
+      <TypeId>23</TypeId>
+      <IdentityKind>always</IdentityKind>
+      <Computed>1</Computed>
+    </column>
+    <column id="49" parent="36" name="input_ai_command">
+      <Position>2</Position>
       <DataType>varchar|0s</DataType>
-      <StateNumber>1032867</StateNumber>
+      <StateNumber>1033048</StateNumber>
       <TypeId>1043</TypeId>
     </column>
-    <column id="38" parent="31" name="content">
-      <Position>2</Position>
+    <column id="50" parent="36" name="input_ai_parameters">
+      <Position>3</Position>
       <DataType>text|0s</DataType>
-      <StateNumber>1032867</StateNumber>
+      <StateNumber>1033048</StateNumber>
       <TypeId>25</TypeId>
     </column>
-    <column id="39" parent="31" name="log_date">
-      <Position>3</Position>
+    <column id="51" parent="36" name="input_ai_date">
+      <Position>4</Position>
       <DataType>timestamp|0s</DataType>
-      <StateNumber>1032867</StateNumber>
+      <StateNumber>1033048</StateNumber>
       <TypeId>1114</TypeId>
     </column>
+    <index id="52" parent="36" name="input_ai_data_pkey">
+      <ObjectId>36073</ObjectId>
+      <StateNumber>1033048</StateNumber>
+      <ColNames>input_ai_id</ColNames>
+      <Unique>1</Unique>
+      <Primary>1</Primary>
+    </index>
+    <key id="53" parent="36" name="input_ai_data_pkey">
+      <ObjectId>36074</ObjectId>
+      <StateNumber>1033048</StateNumber>
+      <ColNames>input_ai_id</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>input_ai_data_pkey</UnderlyingIndexName>
+    </key>
+    <column id="54" parent="37" name="input_ai_images_id">
+      <Position>1</Position>
+      <DataType>integer|0s</DataType>
+      <NotNull>1</NotNull>
+      <StateNumber>1033050</StateNumber>
+      <TypeId>23</TypeId>
+      <IdentityKind>by-default</IdentityKind>
+    </column>
+    <column id="55" parent="37" name="input_ai_id">
+      <Position>2</Position>
+      <DataType>integer|0s</DataType>
+      <StateNumber>1033050</StateNumber>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="56" parent="37" name="input_ai_images_images">
+      <Position>3</Position>
+      <DataType>bytea|0s</DataType>
+      <StateNumber>1033050</StateNumber>
+      <TypeId>17</TypeId>
+    </column>
+    <column id="57" parent="37" name="input_ai_images_date">
+      <Position>4</Position>
+      <DataType>timestamp|0s</DataType>
+      <StateNumber>1033050</StateNumber>
+      <TypeId>1114</TypeId>
+    </column>
+    <index id="58" parent="37" name="input_ai_images_pkey">
+      <ObjectId>36083</ObjectId>
+      <StateNumber>1033050</StateNumber>
+      <ColNames>input_ai_images_id</ColNames>
+      <Unique>1</Unique>
+      <Primary>1</Primary>
+    </index>
+    <key id="59" parent="37" name="input_ai_images_pkey">
+      <ObjectId>36084</ObjectId>
+      <StateNumber>1033050</StateNumber>
+      <ColNames>input_ai_images_id</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>input_ai_images_pkey</UnderlyingIndexName>
+    </key>
+    <column id="60" parent="38" name="output_ai_id">
+      <Position>1</Position>
+      <DataType>integer|0s</DataType>
+      <NotNull>1</NotNull>
+      <StateNumber>1033129</StateNumber>
+      <TypeId>23</TypeId>
+      <IdentityKind>always</IdentityKind>
+      <Computed>1</Computed>
+    </column>
+    <column id="61" parent="38" name="input_ai_id">
+      <Position>2</Position>
+      <DataType>integer|0s</DataType>
+      <StateNumber>1033129</StateNumber>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="62" parent="38" name="output_ai_content">
+      <Position>3</Position>
+      <DataType>text|0s</DataType>
+      <StateNumber>1033129</StateNumber>
+      <TypeId>25</TypeId>
+    </column>
+    <column id="63" parent="38" name="output_ai_date">
+      <Position>4</Position>
+      <DataType>timestamp|0s</DataType>
+      <StateNumber>1033129</StateNumber>
+      <TypeId>1114</TypeId>
+    </column>
+    <index id="64" parent="38" name="output_ai_data_pkey">
+      <ObjectId>37586</ObjectId>
+      <StateNumber>1033129</StateNumber>
+      <ColNames>output_ai_id</ColNames>
+      <Unique>1</Unique>
+      <Primary>1</Primary>
+    </index>
+    <key id="65" parent="38" name="output_ai_data_pkey">
+      <ObjectId>37587</ObjectId>
+      <StateNumber>1033129</StateNumber>
+      <ColNames>output_ai_id</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>output_ai_data_pkey</UnderlyingIndexName>
+    </key>
+    <column id="66" parent="39" name="output_ai_images_id">
+      <Position>1</Position>
+      <DataType>integer|0s</DataType>
+      <NotNull>1</NotNull>
+      <StateNumber>1033131</StateNumber>
+      <TypeId>23</TypeId>
+      <IdentityKind>by-default</IdentityKind>
+    </column>
+    <column id="67" parent="39" name="input_ai_id">
+      <Position>2</Position>
+      <DataType>integer|0s</DataType>
+      <StateNumber>1033131</StateNumber>
+      <TypeId>23</TypeId>
+    </column>
+    <column id="68" parent="39" name="output_ai_images_images">
+      <Position>3</Position>
+      <DataType>bytea|0s</DataType>
+      <StateNumber>1033131</StateNumber>
+      <TypeId>17</TypeId>
+    </column>
+    <column id="69" parent="39" name="output_ai_images_date">
+      <Position>4</Position>
+      <DataType>timestamp|0s</DataType>
+      <StateNumber>1033131</StateNumber>
+      <TypeId>1114</TypeId>
+    </column>
+    <index id="70" parent="39" name="output_ai_images_pkey">
+      <ObjectId>37596</ObjectId>
+      <StateNumber>1033131</StateNumber>
+      <ColNames>output_ai_images_id</ColNames>
+      <Unique>1</Unique>
+      <Primary>1</Primary>
+    </index>
+    <key id="71" parent="39" name="output_ai_images_pkey">
+      <ObjectId>37597</ObjectId>
+      <StateNumber>1033131</StateNumber>
+      <ColNames>output_ai_images_id</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>output_ai_images_pkey</UnderlyingIndexName>
+    </key>
+    <column id="72" parent="40" name="request_id">
+      <Position>1</Position>
+      <DataType>integer|0s</DataType>
+      <NotNull>1</NotNull>
+      <StateNumber>1032934</StateNumber>
+      <TypeId>23</TypeId>
+      <IdentityKind>by-default</IdentityKind>
+    </column>
+    <column id="73" parent="40" name="request_state">
+      <Position>2</Position>
+      <DataType>varchar|0s</DataType>
+      <StateNumber>1032934</StateNumber>
+      <TypeId>1043</TypeId>
+    </column>
+    <column id="74" parent="40" name="request_content">
+      <Position>3</Position>
+      <DataType>text|0s</DataType>
+      <StateNumber>1032934</StateNumber>
+      <TypeId>25</TypeId>
+    </column>
+    <column id="75" parent="40" name="request_date">
+      <Position>4</Position>
+      <DataType>timestamp|0s</DataType>
+      <StateNumber>1032934</StateNumber>
+      <TypeId>1114</TypeId>
+    </column>
+    <index id="76" parent="40" name="request_log_pkey">
+      <ObjectId>36002</ObjectId>
+      <StateNumber>1032934</StateNumber>
+      <ColNames>request_id</ColNames>
+      <Unique>1</Unique>
+      <Primary>1</Primary>
+    </index>
+    <key id="77" parent="40" name="request_log_pkey">
+      <ObjectId>36003</ObjectId>
+      <StateNumber>1032934</StateNumber>
+      <ColNames>request_id</ColNames>
+      <Primary>1</Primary>
+      <UnderlyingIndexName>request_log_pkey</UnderlyingIndexName>
+    </key>
   </database-model>
 </dataSource>

@@ -14,6 +14,7 @@ VIEW_SHIELDING_MODEL = 1
 SKYLINE_SEG_MODEL = 2
 SHADOW_DETECTION = 3
 
+
 class Models(object):
 
     # Models

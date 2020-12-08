@@ -39,7 +39,19 @@ class POSTGRESQL(object):
 
     def execute(self, query, values):
         self.cursor.execute(query, values)
-        # print(self.cursor.fetchone)
+
+    def executemany(self, query, values):
+        self.cursor.executemany(query, values)
+
+    # def insert(self, table, columns, values, returning=False):
+    #
+    #     query = "INSERT INTO {table} ({columns}) VALUES (%s)".format(table=table, columns=columns)
+    #     print(query)
+    #     print(values)
+    #
+    #     if returning:
+    #         query += "RETURNING {column}".format(column=returning)
+    #     self.execute(query, values)
 
     def fetchone(self):
         return self.cursor.fetchone()

@@ -4,6 +4,8 @@
 import warnings
 import os
 import sys
+import traceback
+import logging
 
 # Setting for execute .exe
 if getattr(sys, 'frozen', False):
@@ -25,7 +27,8 @@ from dtsa import spatial_analysis as sa
 
 from db import postgresql
 
-warnings.filterwarnings('ignore')
+from common.setting import check_images_folder
+# warnings.filterwarnings('ignore')
 
 app = Flask(__name__)
 CORS(app)
@@ -44,26 +47,70 @@ dtai_model.load()
 # db connection
 postgresql.connection_check()
 
+# check images folder
+check_images_folder()
+
+
+def access_log(rq, date, pg):
+
+    request_info = rq.environ
+    access_ip = request_info['REMOTE_ADDR']
+    access_method = request_info['REQUEST_METHOD']
+    access_content = request_info['REQUEST_URI']
+    access_date = date
+
+    query = "INSERT INTO access_log (access_ip, access_method, access_content, access_date) VALUES (%s, %s, %s, %s)"
+    values = (access_ip, access_method, access_content, access_date)
+    pg.execute(query, values)
+    pg.commit()
+    pg.close()
+
+
 @app.route('/')
 def security():
+    date_today = datetime.now(timezone('Asia/Seoul'))
+    pg = postgresql.POSTGRESQL()
+    access_log(request, date_today, pg)
+
     return "<h1>Thanks for giving me your IP and address! I'll find you soon<h1>"
 
 
 # Delete later
 @app.route('/landscape', methods=['GET', 'POST'])
 def landscape():
+    date_today = datetime.now(timezone('Asia/Seoul'))
+    pg = postgresql.POSTGRESQL()
+    access_log(request, date_today, pg)
 
     if request.method == 'POST':
-        # input image
 
-        imgs = request.files
-        # parameter
-        data = request.form
-        # response = process.api(img, data)
-        dtai = process.Config(imgs, data)
-        # print('Request images :', imgs)
-        # print('Request data :', data)
-        response = dtai.api()
+        pg = postgresql.POSTGRESQL()
+
+        try:
+            # input image
+            images = request.files
+            # parameter
+            data = request.form
+
+            dtai = process.ResponseConfig(images, data)
+            response = dtai.api()
+
+            query = "INSERT INTO request_log (request_state, request_content, request_date) VALUES (%s, %s, %s)"
+            values = ("SUCCEEDED", data['command'], date_today)
+            pg.execute(query, values)
+            pg.commit()
+            pg.close()
+
+        except Exception as error:
+            logging.error(traceback.print_exc())
+
+            response = jsonify({'Error': str(error)})
+
+            query = "INSERT INTO request_log (request_state, request_content, request_date) VALUES (%s, %s, %s)"
+            values = ("FAILED", error, date_today)
+            pg.execute(query, values)
+            pg.commit()
+            pg.close()
 
     else:
         error = 'Error : Request method is only POST'
@@ -75,33 +122,39 @@ def landscape():
 @app.route('/ai-analysis', methods=['GET', 'POST'])
 def ai_analysis():
 
+    date_today = datetime.now(timezone('Asia/Seoul'))
+    pg = postgresql.POSTGRESQL()
+    access_log(request, date_today, pg)
+
     if request.method == 'POST':
 
+        pg = postgresql.POSTGRESQL()
+
         try:
-
-
             # input image
             images = request.files
             # parameter
             data = request.form
 
-            # cur = connection.cursor()
-            #
-            # date_today = datetime.now(timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
-            # print(images)
-            # print(data)
-            # cur.execute(
-            #     """
-            #     INSERT INTO input_data (input_images, input_parameters, input_date) VALUES (%s, %s, %s)
-            #     """, (images, data, date_today))
-            # connection.commit()
-            # cur.close()
-            dtai = process.Config(images, data)
+            dtai = process.ResponseConfig(images, data)
             response = dtai.api()
 
+            query = "INSERT INTO request_log (request_state, request_content, request_date) VALUES (%s, %s, %s)"
+            values = ("SUCCEEDED", data['command'], date_today)
+            pg.execute(query, values)
+            pg.commit()
+            pg.close()
+
         except Exception as error:
-            print(error)
-            response = jsonify({'Error': error})
+            logging.error(traceback.print_exc())
+
+            response = jsonify({'Error': str(error)})
+
+            query = "INSERT INTO request_log (request_state, request_content, request_date) VALUES (%s, %s, %s)"
+            values = ("FAILED", error, date_today)
+            pg.execute(query, values)
+            pg.commit()
+            pg.close()
 
     else:
         error = 'Error : Request method is only POST'
@@ -133,7 +186,6 @@ def spatial_analysis():
 
 @app.route('/image-analysis', methods=['GET', 'POST'])
 def image_analysis():
-
     if request.method == 'POST':
         # input image
 
@@ -149,6 +201,7 @@ def image_analysis():
         response = jsonify({'Error': error})
 
     return response
+
 
 if __name__ == "__main__":
     app.run(host='0.0.0.0')

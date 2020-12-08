@@ -12,6 +12,8 @@ import json
 from PIL import ImageColor
 from PIL import Image
 
+from io import BytesIO
+
 from flask import jsonify
 
 from datetime import datetime
@@ -25,9 +27,13 @@ from dtai.dtnn import Models
 
 from db import postgresql
 
+import uuid
+
+from common.path import *
+
 
 # Maintain dictionary types a consistent structure, if you can
-class Config(object):
+class ResponseConfig(object):
 
     def __init__(self, images, data):
         self.data = data
@@ -43,17 +49,39 @@ class Config(object):
             self.img_format = False
 
         pg = postgresql.POSTGRESQL()
-        date_today = datetime.now(timezone('Asia/Seoul')).strftime("%Y-%m-%d %H:%M:%S")
-        query = "INSERT INTO input_data (input_parameters, input_date) VALUES (%s, %s) RETURNING input_id"
-        values = (data.get('parameters'), date_today)
+        self.date_today = datetime.now(timezone('Asia/Seoul'))
+        query = "INSERT INTO input_ai_data (input_ai_command, input_ai_parameters, input_ai_date) " \
+                "VALUES (%s, %s, %s) RETURNING input_ai_id"
+        values = (self.command, self.data.get('parameters'), self.date_today)
         pg.execute(query, values)
-        input_id = pg.fetchone()[0]
-        print(input_id)
+        self.input_ai_id = pg.fetchone()[0]
+        pg.commit()
+
+        query = "INSERT INTO input_ai_images (input_ai_id, input_ai_images_images, input_ai_images_date) " \
+                "VALUES (%s, %s, %s)"
+
+        values = []
+        for i in self.images:
+            temp = [self.input_ai_id, i.read(), self.date_today]
+            values.append(temp)
+        pg.executemany(query, values)
         pg.commit()
         pg.close()
 
+        random_id = str(uuid.uuid4())
+        tf_date_today = self.date_today.strftime("%Y%m%dT%H%M")
+
+        for i, im in enumerate(self.images):
+            io = Image.open(im)
+            save_path = os.path.join(path_command_check(self.command)[0], tf_date_today)
+            if not os.path.isdir(save_path):
+                os.makedirs(save_path)
+            io.save(os.path.join(save_path, '{}_{}_{}.png'.format(tf_date_today, i, random_id)))
+
     def api(self):
         result = self.__command_check()
+        temp_result = result.copy()
+        pg = postgresql.POSTGRESQL()
 
         if 'output_img' in result:
 
@@ -69,7 +97,38 @@ class Config(object):
                 img_format = 'base64'
 
             output_format = utils.OutputFormat(result['output_img'], img_format)
+
+            query = "INSERT INTO output_ai_images " \
+                    "(input_ai_id, output_ai_images_images, output_ai_images_date) " \
+                    "VALUES (%s, %s, %s)"
+
+            values = []
+            images = result['output_img']
+
+            if isinstance(images, np.ndarray):
+                images = [images]
+
+            for i in images:
+                raw_bytes = BytesIO()
+                img_buffer = Image.fromarray(i.astype('uint8'))
+                img_buffer.save(raw_bytes, 'PNG')
+                raw_bytes.seek(0)
+                temp = [self.input_ai_id, raw_bytes.read(), self.date_today]
+                values.append(temp)
+
+            pg.executemany(query, values)
+            pg.commit()
+
             result['output_img'] = output_format.trans_format()
+            del (temp_result['output_img'])
+
+        query = "INSERT INTO output_ai_data (input_ai_id, output_ai_content, output_ai_date) " \
+                "VALUES (%s, %s, %s)"
+        values = (self.input_ai_id, json.dumps(temp_result), self.date_today)
+        values = (self.input_ai_id, json.dumps(result), self.date_today)
+        pg.execute(query, values)
+        pg.commit()
+        pg.close()
 
         return jsonify({'command': self.command, 'result': result})
 
