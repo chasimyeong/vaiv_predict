@@ -17,3 +17,4 @@ main.py를 실행하면서 model은 미리 compile해야함. API를 호출할 �
 
 추후 ppt로 class, py파일 용도 작성
 
+수정1
